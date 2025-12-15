@@ -1,0 +1,23 @@
+mypy==1.6.1
+django-stubs[compatible-mypy]
+ruff==0.11.9
+
+pre-commit==4.0.1
+
+Django==5.2.1
+
+django-ninja-extra==0.30.0
+django-ninja==1.4.1
+
+PyJWT==2.10.1
+python-dotenv==1.1.0
+
+psycopg2-binary>=2.9.9; sys_platform != "win32"
+psycopg2; sys_platform == "win32"
+
+whitenoise
+django-cors-headers
+
+# cloudinary
+cloudinary
+django-cloudinary-storage
