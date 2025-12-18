@@ -109,3 +109,6 @@ class Review(models.Model):
 
     def __str__(self):
         return f"Review {self.user.name} for Product {self.product.name}"
+
+    class Meta:
+        unique_together = ("product", "user")

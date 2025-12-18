@@ -4,11 +4,11 @@ from uuid import UUID
 import openpyxl
 from cloudinary.uploader import upload
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from django.http import HttpResponse
 from openpyxl.utils import get_column_letter
 
-from product.models import Brand, Product, ProductImage
+from product.models import Brand, Product, ProductImage, Review
 from product.schemas import ProductRequestSchema, SearchFilterSortSchema
 
 
@@ -133,11 +133,39 @@ class ProductORM:
         if payload.max_price is not None:
             query &= Q(sale_price__lte=payload.max_price)
         sort_order = "" if payload.sort == "asc" else "-"
-        return Product.objects.filter(query).order_by(f"{sort_order}sale_price")
+        order_by_field = f"{sort_order}sale_price"
+        return (
+            Product.objects.filter(query)
+            .select_related("brand")
+            .prefetch_related(
+                Prefetch(
+                    "image_fk_product",
+                    queryset=ProductImage.objects.all(),
+                    to_attr="images",
+                )
+            )
+            .order_by(order_by_field)
+        )
 
     @staticmethod
     def get_by_uid(uid: UUID):
-        return Product.objects.get(uid=uid, deleted=False)
+        return (
+            Product.objects.filter(uid=uid, deleted=False)
+            .select_related("brand")
+            .prefetch_related(
+                Prefetch(
+                    "image_fk_product",
+                    queryset=ProductImage.objects.all(),
+                    to_attr="images",
+                ),
+                Prefetch(
+                    "review_fk_product",
+                    queryset=Review.objects.select_related("user"),
+                    to_attr="reviews",
+                ),
+            )
+            .first()
+        )
 
     @staticmethod
     def update(product: Product, payload: ProductRequestSchema):

@@ -7,6 +7,7 @@ from product.schemas import (
     ProductImageResponseSchema,
     ProductRequestSchema,
     ProductResponseSchema,
+    ProductUIDResponseSchema,
     SearchFilterSortSchema,
 )
 from product.services import ProductService
@@ -51,7 +52,7 @@ class ProductController(Controller):
     def get_all(self, payload: SearchFilterSortSchema):
         return self.service.get_all(payload=payload)
 
-    @get("/{uid}", response=ProductResponseSchema)
+    @get("/{uid}", response=ProductUIDResponseSchema)
     def get_by_uid(self, uid: UUID):
         return self.service.get_by_uid(uid=uid)
 
