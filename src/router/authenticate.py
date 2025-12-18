@@ -28,7 +28,7 @@ class AuthBear(HttpBearer):
         return token_object
 
     @classmethod
-    def authenticate(cls, request: AuthenticatedRequest, token: str):
+    def authenticate(cls, request: AuthenticatedRequest, token: str):  # type: ignore
         authenticate_token = cls.verify_token(token=token)
 
         request.user = authenticate_token.user

@@ -1,3 +1,4 @@
+from account.services import AccountService
 from router.authenticate import AuthBear
 from router.controller import Controller, api, post, put
 
@@ -9,7 +10,6 @@ from .schemas import (
     LogoutSchema,
     RegisterResponseSchema,
 )
-from .services import AccountService
 
 
 @api(prefix_or_class="account", tags=["Account"], auth=None)

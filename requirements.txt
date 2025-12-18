@@ -17,9 +17,15 @@ psycopg2; sys_platform == "win32"
 
 whitenoise
 django-cors-headers
+types-requests
+
+openpyxl
 
 # cloudinary
 cloudinary
 django-cloudinary-storage
 
 google-auth
+
+django-ninja
+django-ninja-extra

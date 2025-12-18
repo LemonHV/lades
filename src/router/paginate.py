@@ -2,6 +2,8 @@ from collections import OrderedDict
 from typing import Any, Generic, List, Type, TypeVar
 
 from django.core.paginator import Paginator
+from django.db.models import QuerySet
+from django.http import HttpRequest
 from ninja import Schema
 from ninja.pagination import PaginationBase
 from ninja_extra.pagination import paginate
@@ -28,7 +30,13 @@ class Pagination(PaginationBase):
         page_size: int = 50
         page: int = 1
 
-    def paginate_queryset(self, queryset: Any, pagination: Input, **params: Any):
+    def paginate_queryset(
+        self,
+        queryset: QuerySet[Any, Any],
+        pagination: Input,
+        request: HttpRequest,
+        **params: Any,
+    ):
         paginator = Paginator(queryset, pagination.page_size)
 
         total_pages = paginator.num_pages

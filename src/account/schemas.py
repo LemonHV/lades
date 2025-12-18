@@ -11,7 +11,7 @@ class RegisterResponseSchema(Schema):
 
 
 class LoginResponseSchema(Schema):
-    token: str
+    token: str | None
 
 
 class LoginGoogleSchema(Schema):
