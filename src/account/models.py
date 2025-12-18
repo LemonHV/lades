@@ -13,10 +13,10 @@ from django.utils.timezone import now
 class Manager(BaseUserManager):
     use_in_migrations = True
 
-    def create_user(self, identifier: str, password=None) -> "User":
+    def create_user(self, identifier: str, password=None, **extra_fields) -> "User":
         if not identifier:
             raise ValueError("User must have a username")
-        user = cast("User", self.model(identifier=identifier))
+        user = cast("User", self.model(identifier=identifier, **extra_fields))
         user.set_password(password)
         user.save(using=self._db)
         return user
