@@ -30,6 +30,7 @@ repos:
           - "django-cors-headers"
           - cloudinary
           - django-cloudinary-storage
+          - types-requests
         args: [--config=pyproject.toml, --explicit-package-bases]
 
   - repo: https://github.com/pre-commit/pre-commit-hooks

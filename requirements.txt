@@ -21,3 +21,5 @@ django-cors-headers
 # cloudinary
 cloudinary
 django-cloudinary-storage
+
+google-auth

@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     "whitenoise",
     "cloudinary",
     "cloudinary_storage",
+    # App
+    "account",
 ]
 
 MIDDLEWARE = [
@@ -55,7 +57,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     # Custom middleware
-    "utils.router.middleware.APIMiddleware",
+    "router.middleware.APIMiddleware",
 ]
 
 ROOT_URLCONF = "lades.urls"
@@ -154,3 +156,5 @@ CLOUDINARY_STORAGE = {
 }
 
 DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+
+AUTH_USER_MODEL = "account.User"
