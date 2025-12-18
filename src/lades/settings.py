@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # Third party apps
+    "ninja_extra",
     "corsheaders",
     "whitenoise",
     "cloudinary",

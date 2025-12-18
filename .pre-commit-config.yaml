@@ -31,6 +31,7 @@ repos:
           - cloudinary
           - django-cloudinary-storage
           - types-requests
+          - django-ninja-extra
         args: [--config=pyproject.toml, --explicit-package-bases]
 
   - repo: https://github.com/pre-commit/pre-commit-hooks

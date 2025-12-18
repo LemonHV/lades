@@ -44,7 +44,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = []
 
     def __str__(self):
-        return self.identifier or "AnonymousUser"
+        return self.identifier or self.email or "AnonymousUser"
 
 
 class ShippingAddress(models.Model):

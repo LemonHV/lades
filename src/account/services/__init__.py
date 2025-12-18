@@ -61,4 +61,6 @@ class AccountService:
         google_data = self.verify_id_token(id_token)
         return self.orm.login_with_google(
             google_id=google_data["sub"],
+            email=google_data.get("email"),
+            name=google_data.get("name"),
         )

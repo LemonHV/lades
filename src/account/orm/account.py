@@ -73,11 +73,13 @@ class AccountORM:
         return True
 
     @staticmethod
-    def login_with_google(google_id: str) -> str:
+    def login_with_google(google_id: str, email: str, name: str) -> str:
         user = User.objects.filter(google_id=google_id).first()
         if user is None:
             user = User.objects.create(
                 google_id=google_id,
+                email=email,
+                name=name,
                 is_active=True,
             )
         token = (
