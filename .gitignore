@@ -11,3 +11,7 @@ __pycache__/
 venv/
 **/env/.env*
 !**/env/.env.sample
+
+Dockerfile
+docker-compose.yaml
+.dockerignore
