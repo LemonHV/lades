@@ -32,7 +32,6 @@ class Manager(BaseUserManager):
 
 class User(AbstractBaseUser, PermissionsMixin):
     uid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
-    identifier = models.CharField(max_length=255, unique=True, null=True, blank=True)
     email = models.EmailField(max_length=255, unique=True, null=True, blank=True)
     google_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
     name = models.CharField(max_length=100, blank=True)
@@ -40,11 +39,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(auto_now_add=True)
     objects = Manager()
-    USERNAME_FIELD = "identifier"
+    USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
     def __str__(self):
-        return self.identifier or self.email or "AnonymousUser"
+        return self.email or "AnonymousUser"
 
 
 class ShippingAddress(models.Model):

@@ -15,18 +15,21 @@ class AccountService:
     def __init__(self):
         self.orm = AccountORM()
 
-    def register(self, identifier: str, password: str) -> User:
-        if not identifier or not password:
+    def register(self, email: str, password: str) -> User:
+        if not email or not password:
             raise UsernameOrPasswordInvalid
-        user = self.orm.register(identifier=identifier, password=password)
+        user = self.orm.register(email=email, password=password)
         if user is None:
             raise UserNameAlreadyExists
         return user
 
-    def login_with_credential(self, identifier: str, password: str) -> str | None:
-        if not identifier or not password:
+    def verify_email(self, token: str):
+        return self.orm.verify_email(token=token)
+
+    def login_with_credential(self, email: str, password: str) -> str | None:
+        if not email or not password:
             raise UsernameOrPasswordInvalid
-        token = self.orm.login_with_credential(identifier=identifier, password=password)
+        token = self.orm.login_with_credential(email=email, password=password)
         if token is None:
             raise UsernameOrPasswordInvalid
         return token

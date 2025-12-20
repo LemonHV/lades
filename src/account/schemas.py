@@ -2,12 +2,12 @@ from ninja import Schema
 
 
 class CredentialSchema(Schema):
-    identifier: str
+    email: str
     password: str
 
 
 class RegisterResponseSchema(Schema):
-    identifier: str
+    email: str
 
 
 class LoginResponseSchema(Schema):

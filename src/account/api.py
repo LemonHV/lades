@@ -19,14 +19,16 @@ class AccountAPI(Controller):
 
     @post("/register", response=RegisterResponseSchema)
     def register(self, payload: CredentialSchema):
-        return self.service.register(
-            identifier=payload.identifier, password=payload.password
-        )
+        return self.service.register(email=payload.email, password=payload.password)
+
+    @post("/verify-email/{token}", response=LoginResponseSchema)
+    def verify_email(self, token: str):
+        return LoginResponseSchema(token=self.service.verify_email(token=token))
 
     @post("/login-credential", response=LoginResponseSchema)
     def login_with_credential(self, payload: CredentialSchema):
         token = self.service.login_with_credential(
-            identifier=payload.identifier, password=payload.password
+            email=payload.email, password=payload.password
         )
         return LoginResponseSchema(token=token)
 

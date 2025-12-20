@@ -7,11 +7,11 @@ from .models import User
 class UserAdmin(admin.ModelAdmin):
     ordering = ("date_joined",)
     list_display = (
-        "identifier",
+        "email",
         "google_id",
         "is_staff",
         "is_active",
         "date_joined",
     )
-    search_fields = ("identifier", "email")
-    USERNAME_FIELD = "identifier"
+    search_fields = ("email",)
+    USERNAME_FIELD = "email"
