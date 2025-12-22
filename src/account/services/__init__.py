@@ -2,29 +2,21 @@ import os
 
 import requests
 
-from account.models import User
 from account.orm.account import AccountORM
-from exceptions.auth import (
-    InvalidOrExpiredToken,
-    UserNameAlreadyExists,
-    UsernameOrPasswordInvalid,
-)
+from exceptions.auth import InvalidOrExpiredToken, UsernameOrPasswordInvalid
 
 
 class AccountService:
     def __init__(self):
         self.orm = AccountORM()
 
-    def register(self, email: str, password: str) -> User:
+    def register(self, email: str, password: str) -> None:
         if not email or not password:
             raise UsernameOrPasswordInvalid
-        user = self.orm.register(email=email, password=password)
-        if user is None:
-            raise UserNameAlreadyExists
-        return user
+        self.orm.register(email=email, password=password)
 
-    def verify_email(self, token: str):
-        return self.orm.verify_email(token=token)
+    def verify_email(self, token: str) -> None:
+        self.orm.verify_email(token=token)
 
     def login_with_credential(self, email: str, password: str) -> str | None:
         if not email or not password:

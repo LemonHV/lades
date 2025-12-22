@@ -1,6 +1,10 @@
+import os
+
+from django.shortcuts import redirect
+
 from account.services import AccountService
 from router.authenticate import AuthBear
-from router.controller import Controller, api, post, put
+from router.controller import Controller, api, get, post, put
 
 from .schemas import (
     CredentialSchema,
@@ -19,11 +23,16 @@ class AccountAPI(Controller):
 
     @post("/register", response=RegisterResponseSchema)
     def register(self, payload: CredentialSchema):
-        return self.service.register(email=payload.email, password=payload.password)
+        self.service.register(email=payload.email, password=payload.password)
+        return RegisterResponseSchema(email=payload.email)
 
-    @post("/verify-email/{token}", response=LoginResponseSchema)
+    @get("/verify-email/{token}")
     def verify_email(self, token: str):
-        return LoginResponseSchema(token=self.service.verify_email(token=token))
+        self.service.verify_email(token=token)
+        frontend_url = os.environ.get("FRONTEND_URL")
+        if not frontend_url:
+            raise RuntimeError("Frontend url is not set")
+        return redirect(frontend_url)
 
     @post("/login-credential", response=LoginResponseSchema)
     def login_with_credential(self, payload: CredentialSchema):

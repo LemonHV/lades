@@ -40,126 +40,132 @@ class AccountORM:
             return token
         return AccountORM.generate_key(user=user)
 
+    @staticmethod
+    def send_verify_email(link: str, email: str, verify_type: str):
+        if verify_type == "register":
+            html_message = f"""
+                        <!DOCTYPE html>
+                        <html>
+                        <body style="margin:0; padding:0; background-color:#ffffff; font-family: Arial, Helvetica, sans-serif;">
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td align="center">
+                                <table width="600" cellpadding="0" cellspacing="0" style="padding:40px 30px;">
+
+                                    <!-- LOGO -->
+                                    <tr>
+                                    <td align="center" style="padding-bottom:30px;">
+                                        <img src="https://img.freepik.com/premium-vector/hand-drawn-cosmetic-brushes-gentle-brush-stroke-grunge-style-sketch-cosmetic-illustration_484720-4254.jpg?w=2000"
+                                            alt="Lades"
+                                            width="120"
+                                            style="display:block;">
+                                    </td>
+                                    </tr>
+
+                                    <!-- GREETING -->
+                                    <tr>
+                                    <td style="color:#333333; font-size:14px; padding-bottom:20px;">
+                                        Xin chào bạn,
+                                    </td>
+                                    </tr>
+
+                                    <!-- MAIN CONTENT -->
+                                    <tr>
+                                    <td style="color:#333333; font-size:14px; line-height:1.6;">
+                                        Cảm ơn bạn đã đăng ký tài khoản tại <strong>Lades</strong>.
+                                        <br><br>
+
+                                        Vui lòng bấm vào đường dẫn bên dưới để xác nhận email và hoàn tất việc đăng ký.
+                                        <br><br>
+
+                                        <a href="{link}" style="color:#006241; text-decoration:underline;">
+                                        Xác thực địa chỉ email
+                                        </a>
+                                        <br><br>
+
+                                        Sau khi hoàn thành đăng ký tài khoản, bạn có thể thoải mái mua sắm những bộ cọ tuyệt đẹp.
+                                        Cùng với đó là những ưu đãi hấp dẫn mà hãng <strong>Lades</strong> mang đến.
+                                        Hãy nhanh tay mua sắm nào!
+                                        <br><br>
+
+                                        Trân trọng,<br>
+                                        <strong>Lades System</strong>
+                                    </td>
+                                    </tr>
+
+
+                                    <!-- DIVIDER -->
+                                    <tr>
+                                    <td style="padding:30px 0;">
+                                        <hr style="border:none; border-top:1px solid #dddddd;">
+                                    </td>
+                                    </tr>
+
+                                    <!-- FOOTER -->
+                                    <tr>
+                                    <td style="padding-top:20px; font-size:12px; color:#999999; line-height:1.5;">
+                                        Email này được gửi tự động, vui lòng không phản hồi.<br>
+                                        Nếu bạn không thực hiện yêu cầu đăng ký, hãy bỏ qua email này.<br><br>
+                                        © 2025 Lades. Bảo lưu mọi quyền.
+                                    </td>
+                                    </tr>
+
+                                </table>
+                                </td>
+                            </tr>
+                            </table>
+                        </body>
+                        </html>
+                        """
+
+            send_mail(
+                subject="Xác thực đăng ký tài khoản tại hệ thống Lades",
+                message=f"Vui lòng xác thực đăng ký tài khoản bằng cách nhấp vào link bên dưới để xác thực xác thực: {link}",
+                from_email=os.environ.get("DEFAULT_FROM_EMAIL"),
+                recipient_list=[email],
+                html_message=html_message,
+                fail_silently=False,
+            )
+
     # REGISTER #
     @staticmethod
-    def register(email: str, password: str) -> User | None:
+    def register(email: str, password: str) -> None:
         if User.objects.filter(email=email).exists():
-            return None
+            raise ValueError("Email đã tồn tại")
         user = User(email=email, is_active=False)
         user.set_password(password)
         user.save()
         token_object = AccountORM.get_key(user=user)
-
-        link = f"http://localhost:8000/verify-email/?token={token_object.token}"
-        html_message = f"""
-        <!DOCTYPE html>
-        <html>
-        <body style="margin:0; padding:0; background-color:#ffffff; font-family: Arial, Helvetica, sans-serif;">
-            <table width="100%" cellpadding="0" cellspacing="0">
-            <tr>
-                <td align="center">
-                <table width="600" cellpadding="0" cellspacing="0" style="padding:40px 30px;">
-
-                    <!-- LOGO -->
-                    <tr>
-                    <td align="center" style="padding-bottom:30px;">
-                        <img src="https://img.freepik.com/premium-vector/hand-drawn-cosmetic-brushes-gentle-brush-stroke-grunge-style-sketch-cosmetic-illustration_484720-4254.jpg?w=2000"
-                            alt="Lades"
-                            width="120"
-                            style="display:block;">
-                    </td>
-                    </tr>
-
-                    <!-- GREETING -->
-                    <tr>
-                    <td style="color:#333333; font-size:14px; padding-bottom:20px;">
-                        Xin chào bạn,
-                    </td>
-                    </tr>
-
-                    <!-- MAIN CONTENT -->
-                    <tr>
-                    <td style="color:#333333; font-size:14px; line-height:1.6;">
-                        Cảm ơn bạn đã đăng ký tài khoản tại <strong>Lades</strong>.
-                        <br><br>
-
-                        Vui lòng bấm vào đường dẫn bên dưới để xác nhận email và hoàn tất việc đăng ký.
-                        <br><br>
-
-                        <a href="{link}" style="color:#006241; text-decoration:underline;">
-                        Xác thực địa chỉ email
-                        </a>
-                        <br><br>
-
-                        Sau khi hoàn thành đăng ký tài khoản, bạn có thể thoải mái mua sắm những bộ cọ tuyệt đẹp.
-                        Cùng với đó là những ưu đãi hấp dẫn mà hãng <strong>Lades</strong> mang đến.
-                        Hãy nhanh tay mua sắm nào!
-                        <br><br>
-
-                        Trân trọng,<br>
-                        <strong>Lades System</strong>
-                    </td>
-                    </tr>
-
-
-                    <!-- DIVIDER -->
-                    <tr>
-                    <td style="padding:30px 0;">
-                        <hr style="border:none; border-top:1px solid #dddddd;">
-                    </td>
-                    </tr>
-
-                    <!-- FOOTER -->
-                    <tr>
-                    <td style="padding-top:20px; font-size:12px; color:#999999; line-height:1.5;">
-                        Email này được gửi tự động, vui lòng không phản hồi.<br>
-                        Nếu bạn không thực hiện yêu cầu đăng ký, hãy bỏ qua email này.<br><br>
-                        © 2025 Lades. Bảo lưu mọi quyền.
-                    </td>
-                    </tr>
-
-                </table>
-                </td>
-            </tr>
-            </table>
-        </body>
-        </html>
-        """
+        backend_url = os.environ.get("BACKEND_URL")
+        link = f"{backend_url}:8000/api/account/verify-email/{token_object.token}"
         if not user.email:
             raise ValueError("User không có email")
-        send_mail(
-            subject="Xác thực đăng ký tài khoản tại hệ thống Lades",
-            message=f"Vui lòng xác thực đăng ký tài khoản bằng cách nhấp vào link bên dưới để xác thực xác thực: {link}",
-            from_email=os.environ.get("DEFAULT_FROM_EMAIL"),
-            recipient_list=[user.email],
-            html_message=html_message,
-            fail_silently=False,
+        AccountORM.send_verify_email(
+            link=link, email=user.email, verify_type="register"
         )
-        return user
 
     @staticmethod
-    def verify_email(token: str):
+    def verify_email(token: str) -> None:
         token_object = (
             AuthenticateToken.objects.filter(
                 token=token,
                 blacklisted_at__isnull=True,
                 expires_at__gte=now(),
             )
+            .select_related("user")
             .order_by("-created_at")
             .first()
         )
+
         if token_object is None:
-            return "Link không hợp lệ hoặc đã dùng"
+            raise ValueError("Link không hợp lệ hoặc đã dùng")
 
         user = token_object.user
         user.is_active = True
-        user.save()
+        user.save(update_fields=["is_active"])
 
         token_object.blacklisted_at = now()
-        token_object.save()
-
-        new_token_object = AccountORM.get_key(user=user)
-        return new_token_object.token
+        token_object.save(update_fields=["blacklisted_at"])
 
     # LOGIN WITH CREDENTIAL #
 
