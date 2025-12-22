@@ -5,8 +5,8 @@ from datetime import datetime
 from ninja.openapi.docs import Redoc
 from ninja_extra import NinjaExtraAPI
 
-from exceptions.exception import get_handlers
 from router.authenticate import AuthBear
+from router.exception import get_handlers
 
 
 logger = logging.getLogger("django")

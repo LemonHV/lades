@@ -6,8 +6,8 @@ from ninja.constants import NOT_SET
 from ninja.openapi.views import openapi_view
 from ninja_extra import NinjaExtraAPI
 
-from exceptions.exception import generate_exception_response
 from router.authenticate import AuthBear
+from router.exception import generate_exception_response
 from router.paginate import PaginatedResponseSchema
 
 

@@ -13,26 +13,26 @@ from django.utils.timezone import now
 class Manager(BaseUserManager):
     use_in_migrations = True
 
-    def create_user(self, identifier: str, password=None, **extra_fields) -> "User":
-        if not identifier:
+    def create_user(self, email: str, password=None, **extra_fields) -> "User":
+        if not email:
             raise ValueError("User must have a username")
-        user = cast("User", self.model(identifier=identifier, **extra_fields))
+        user = cast("User", self.model(email=email, **extra_fields))
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, identifier: str, password=None, **extra_fields):
+    def create_superuser(self, email: str, password=None, **extra_fields):
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_staff", True)
-        return self.create_user(identifier, password, **extra_fields)
+        return self.create_user(email, password, **extra_fields)
 
-    def get_by_natural_key(self, identifier):
-        return self.get(**{self.model.USERNAME_FIELD: identifier})
+    def get_by_natural_key(self, email):
+        return self.get(**{self.model.USERNAME_FIELD: email})
 
 
 class User(AbstractBaseUser, PermissionsMixin):
     uid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
-    email = models.EmailField(max_length=255, unique=True, null=True, blank=True)
+    email = models.EmailField(max_length=255, unique=True, null=False, blank=False)
     google_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
     name = models.CharField(max_length=100, blank=True)
     is_staff = models.BooleanField(default=False)

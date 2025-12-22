@@ -1,216 +1,172 @@
 import os
-from datetime import timedelta
 
-import jwt
-from django.core.mail import send_mail
 from django.utils.timezone import now
 
+from account.exceptions import (
+    BackendURLNotConfigured,
+    EmailNotExists,
+    InvalidOrExpiredToken,
+)
 from account.models import AuthenticateToken, User
+from account.utils import get_key, send_verify_email
 
 
 class AccountORM:
-    @staticmethod
-    def generate_key(user: User) -> AuthenticateToken:
-        current_time = now()
-        expires_minutes = int(os.environ.get("AUTHENTICATE_TOKEN_EXPIRES_IN", 1440))
-        payload = {
-            "user_id": str(user.uid),
-            "iat": int(current_time.timestamp()),
-            "exp": int((current_time + timedelta(minutes=expires_minutes)).timestamp()),
-        }
-        token = jwt.encode(payload, os.environ.get("SECRET_KEY"), algorithm="HS256")
-        token_object = AuthenticateToken(
-            user=user,
-            token=str(token),
-            expires_at=current_time + timedelta(minutes=expires_minutes),
-        )
-        token_object.save()
-        return token_object
-
-    @staticmethod
-    def get_key(user: User) -> AuthenticateToken:
-        token = (
-            AuthenticateToken.objects.filter(
-                user=user, blacklisted_at__isnull=True, expires_at__gte=now()
-            )
-            .order_by("-created_at")
-            .first()
-        )
-        if token:
-            return token
-        return AccountORM.generate_key(user=user)
-
-    @staticmethod
-    def send_verify_email(link: str, email: str, verify_type: str):
-        if verify_type == "register":
-            html_message = f"""
-                        <!DOCTYPE html>
-                        <html>
-                        <body style="margin:0; padding:0; background-color:#ffffff; font-family: Arial, Helvetica, sans-serif;">
-                            <table width="100%" cellpadding="0" cellspacing="0">
-                            <tr>
-                                <td align="center">
-                                <table width="600" cellpadding="0" cellspacing="0" style="padding:40px 30px;">
-
-                                    <!-- LOGO -->
-                                    <tr>
-                                    <td align="center" style="padding-bottom:30px;">
-                                        <img src="https://img.freepik.com/premium-vector/hand-drawn-cosmetic-brushes-gentle-brush-stroke-grunge-style-sketch-cosmetic-illustration_484720-4254.jpg?w=2000"
-                                            alt="Lades"
-                                            width="120"
-                                            style="display:block;">
-                                    </td>
-                                    </tr>
-
-                                    <!-- GREETING -->
-                                    <tr>
-                                    <td style="color:#333333; font-size:14px; padding-bottom:20px;">
-                                        Xin chào bạn,
-                                    </td>
-                                    </tr>
-
-                                    <!-- MAIN CONTENT -->
-                                    <tr>
-                                    <td style="color:#333333; font-size:14px; line-height:1.6;">
-                                        Cảm ơn bạn đã đăng ký tài khoản tại <strong>Lades</strong>.
-                                        <br><br>
-
-                                        Vui lòng bấm vào đường dẫn bên dưới để xác nhận email và hoàn tất việc đăng ký.
-                                        <br><br>
-
-                                        <a href="{link}" style="color:#006241; text-decoration:underline;">
-                                        Xác thực địa chỉ email
-                                        </a>
-                                        <br><br>
-
-                                        Sau khi hoàn thành đăng ký tài khoản, bạn có thể thoải mái mua sắm những bộ cọ tuyệt đẹp.
-                                        Cùng với đó là những ưu đãi hấp dẫn mà hãng <strong>Lades</strong> mang đến.
-                                        Hãy nhanh tay mua sắm nào!
-                                        <br><br>
-
-                                        Trân trọng,<br>
-                                        <strong>Lades System</strong>
-                                    </td>
-                                    </tr>
-
-
-                                    <!-- DIVIDER -->
-                                    <tr>
-                                    <td style="padding:30px 0;">
-                                        <hr style="border:none; border-top:1px solid #dddddd;">
-                                    </td>
-                                    </tr>
-
-                                    <!-- FOOTER -->
-                                    <tr>
-                                    <td style="padding-top:20px; font-size:12px; color:#999999; line-height:1.5;">
-                                        Email này được gửi tự động, vui lòng không phản hồi.<br>
-                                        Nếu bạn không thực hiện yêu cầu đăng ký, hãy bỏ qua email này.<br><br>
-                                        © 2025 Lades. Bảo lưu mọi quyền.
-                                    </td>
-                                    </tr>
-
-                                </table>
-                                </td>
-                            </tr>
-                            </table>
-                        </body>
-                        </html>
-                        """
-
-            send_mail(
-                subject="Xác thực đăng ký tài khoản tại hệ thống Lades",
-                message=f"Vui lòng xác thực đăng ký tài khoản bằng cách nhấp vào link bên dưới để xác thực xác thực: {link}",
-                from_email=os.environ.get("DEFAULT_FROM_EMAIL"),
-                recipient_list=[email],
-                html_message=html_message,
-                fail_silently=False,
-            )
-
-    # REGISTER #
+    # =========================================
+    # 1. REGISTER & VERIFY EMAIL
+    # =========================================
     @staticmethod
     def register(email: str, password: str) -> None:
-        if User.objects.filter(email=email).exists():
-            raise ValueError("Email đã tồn tại")
         user = User(email=email, is_active=False)
         user.set_password(password)
         user.save()
-        token_object = AccountORM.get_key(user=user)
+        token_object = get_key(user=user)
+
         backend_url = os.environ.get("BACKEND_URL")
-        link = f"{backend_url}:8000/api/account/verify-email/{token_object.token}"
-        if not user.email:
-            raise ValueError("User không có email")
-        AccountORM.send_verify_email(
-            link=link, email=user.email, verify_type="register"
-        )
+        if not backend_url:
+            raise BackendURLNotConfigured
+
+        link = f"{backend_url}/api/account/verify-email-register/{token_object.token}"
+
+        send_verify_email(link=link, email=user.email, verify_type="register")
 
     @staticmethod
-    def verify_email(token: str) -> None:
+    def verify_email_register(token: str) -> None:
         token_object = (
-            AuthenticateToken.objects.filter(
+            AuthenticateToken.objects.select_related("user")
+            .filter(
                 token=token,
                 blacklisted_at__isnull=True,
                 expires_at__gte=now(),
             )
-            .select_related("user")
             .order_by("-created_at")
             .first()
         )
 
-        if token_object is None:
-            raise ValueError("Link không hợp lệ hoặc đã dùng")
+        if not token_object:
+            raise InvalidOrExpiredToken
 
         user = token_object.user
-        user.is_active = True
-        user.save(update_fields=["is_active"])
+        if not user.is_active:
+            user.is_active = True
+            user.save(update_fields=["is_active"])
 
         token_object.blacklisted_at = now()
         token_object.save(update_fields=["blacklisted_at"])
 
-    # LOGIN WITH CREDENTIAL #
+    # =========================================
+    # 2. LOGN & GET TOKEN
+    # =========================================
 
     @staticmethod
-    def login_with_credential(email: str, password: str) -> str | None:
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            return None
-        if not user.is_active or not user.check_password(password):
-            return None
-        token_object = AccountORM.get_key(user=user)
-        return token_object.token
-
-    # LOGOUT #
-    @staticmethod
-    def logout(token: str):
-        try:
-            token_object = AuthenticateToken.objects.get(token=token)
-        except AuthenticateToken.DoesNotExist:
-            return False
-        token_object.blacklisted_at = now()
-        token_object.save()
-        return True
+    def login_with_credential(user: User) -> str:
+        authenticate_token = get_key(user=user)
+        return authenticate_token.token
 
     @staticmethod
     def login_with_google(google_id: str, email: str, name: str) -> str:
         user = User.objects.filter(google_id=google_id).first()
-        if user is None:
+
+        if not user:
             user = User.objects.create(
                 google_id=google_id,
                 email=email,
                 name=name,
                 is_active=True,
             )
-        token = (
-            AuthenticateToken.objects.filter(
-                user=user,
+
+        return get_key(user=user).token
+
+    # =========================================
+    # 3. LOGOUT
+    # =========================================
+
+    @staticmethod
+    def logout(token: str) -> None:
+        try:
+            token_object = AuthenticateToken.objects.get(
+                token=token,
+                blacklisted_at__isnull=True,
+            )
+        except AuthenticateToken.DoesNotExist:
+            raise InvalidOrExpiredToken
+
+        token_object.blacklisted_at = now()
+        token_object.save(update_fields=["blacklisted_at"])
+
+    # =========================================
+    # 4. CHANGE PASSWORD
+    # =========================================
+
+    @staticmethod
+    def change_password(user: User, new_password: str):
+        user.set_password(new_password)
+        user.save(update_fields=["password"])
+
+    # =========================================
+    # 5. RESET PASSWORD
+    # =========================================
+
+    @staticmethod
+    def reset_password(email: str) -> None:
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise EmailNotExists
+
+        backend_url = os.environ.get("BACKEND_URL")
+        if not backend_url:
+            raise BackendURLNotConfigured
+
+        token_object = get_key(user=user)
+
+        link = f"{backend_url}/api/account/verify-email-reset-password/{token_object.token}"
+
+        send_verify_email(
+            link=link,
+            email=user.email,
+            verify_type="reset_password",
+        )
+
+    @staticmethod
+    def verify_email_reset_password(token: str) -> User:
+        token_object = (
+            AuthenticateToken.objects.select_related("user")
+            .filter(
+                token=token,
                 blacklisted_at__isnull=True,
                 expires_at__gte=now(),
             )
             .order_by("-created_at")
             .first()
         )
-        if token:
-            return token.token
 
-        return AccountORM.get_key(user=user).token
+        if not token_object:
+            raise InvalidOrExpiredToken
+
+        user = token_object.user
+        token_object.blacklisted_at = now()
+        token_object.save(update_fields=["blacklisted_at"])
+
+        return user
+
+    @staticmethod
+    def save_password(token: str, new_password: str):
+        token_object = (
+            AuthenticateToken.objects.select_related("user")
+            .filter(
+                token=token,
+                blacklisted_at__isnull=True,
+                expires_at__gte=now(),
+            )
+            .order_by("-created_at")
+            .first()
+        )
+        if not token_object:
+            raise InvalidOrExpiredToken
+        user = token_object.user
+        user.set_password(new_password)
+        user.save(update_fields=["password"])
+        token_object.blacklisted_at = now()
+
+        token_object.save(update_fields=["blacklisted_at"])

@@ -4,7 +4,7 @@ from django.utils.timezone import now
 from ninja.security import HttpBearer
 
 from account.models import AuthenticateToken
-from exceptions.exception import APIException
+from router.exception import APIException
 
 from .types import AuthenticatedRequest
 

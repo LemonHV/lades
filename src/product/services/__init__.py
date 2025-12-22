@@ -1,6 +1,5 @@
 from uuid import UUID
 
-from exceptions.product import ProductDoesNotExist
 from product.models import Product
 from product.orm.product import ProductORM
 from product.schemas import ProductRequestSchema, SearchFilterSortSchema
@@ -29,7 +28,7 @@ class ProductService:
     def get_by_uid(self, uid: UUID):
         product = self.orm.get_by_uid(uid=uid)
         if not (product):
-            raise ProductDoesNotExist
+            raise ValueError("Product is not exist")
         return product
 
     def update(self, uid: UUID, payload: ProductRequestSchema):
@@ -45,4 +44,4 @@ class ProductService:
         try:
             return self.orm.delete_product(product=Product.objects.get(uid=uid))
         except Product.DoesNotExist:
-            raise ProductDoesNotExist
+            raise ValueError("Product is not exist")
