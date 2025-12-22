@@ -1,50 +1,18 @@
-from io import BytesIO
 from uuid import UUID
 
-import openpyxl
-from cloudinary.uploader import upload
 from django.db import transaction
 from django.db.models import Prefetch, Q
 from django.http import HttpResponse
-from openpyxl.utils import get_column_letter
 
 from product.models import Brand, Product, ProductImage, Review
 from product.schemas import ProductRequestSchema, SearchFilterSortSchema
+from product.utils import build_product_workbook, load_product_infomation, upload_file
 
 
 class ProductORM:
-    @staticmethod
-    def get_product_file():
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title = "Danh sách sản phẩm"
-
-        headers = [
-            "Tên sản phẩm",
-            "Mã sản phẩm",
-            "Giá gốc",
-            "Giá bán",
-            "Thương hiệu",
-            "Phân loại",
-            "Mô tả",
-            "Số lượng trong kho",
-        ]
-        ws.append(headers)
-
-        for i, _ in enumerate(headers, 1):
-            ws.column_dimensions[get_column_letter(i)].width = 25
-
-        output = BytesIO()
-
-        wb.save(output)
-        output.seek(0)
-
-        response = HttpResponse(
-            output,
-            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        )
-        response["Content-Disposition"] = "attachment; filename=product_list.xlsx"
-        return response
+    # =========================================
+    # 1. CREATE PRODUCT
+    # =========================================
 
     @staticmethod
     @transaction.atomic
@@ -55,58 +23,111 @@ class ProductORM:
         product.save()
         return product
 
+    # =========================================
+    # 2. GET PRODUCT FILE
+    # =========================================
+    @staticmethod
+    def get_product_file() -> HttpResponse:
+        output = build_product_workbook()
+
+        response = HttpResponse(
+            output,
+            content_type=(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            ),
+        )
+        response["Content-Disposition"] = 'attachment; filename="product_list.xlsx"'
+        return response
+
+    # =========================================
+    # 3. MULTIPLE CREATE PRODUCT
+    # =========================================
+
     @staticmethod
     @transaction.atomic
     def create_multiple(product_file):
-        workbook = openpyxl.load_workbook(product_file)
-        sheet = workbook.active
+        # 1. Load dữ liệu từ file (Excel)
+        products_data = load_product_infomation(product_file=product_file)
 
-        products = []
-        for i, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
-            (
-                name,
-                code,
-                origin_price,
-                sale_price,
-                brand_name,
-                type_,
-                description,
-                quantity_in_stock,
-            ) = row
+        # 2. Cache Brand để không query DB nhiều lần
+        brand_cache: dict[str, Brand] = {}
 
-            if not all(
-                [name, code, origin_price, sale_price, type_, quantity_in_stock]
-            ):
-                continue
+        # 3. Map code -> Product instance (chưa save)
+        product_map: dict[str, Product] = {}
+
+        for product_data in products_data:
+            # --- tách brand_name ra ---
+            brand_name = product_data.pop("brand_name", None)
 
             brand = None
             if brand_name:
-                brand, _ = Brand.objects.get_or_create(name=brand_name)
+                if brand_name not in brand_cache:
+                    brand_cache[brand_name], _ = Brand.objects.get_or_create(
+                        name=brand_name
+                    )
+                brand = brand_cache[brand_name]
 
-            product, _ = Product.objects.update_or_create(
-                code=code,
-                defaults={
-                    "name": name,
-                    "origin_price": origin_price,
-                    "sale_price": sale_price,
-                    "brand": brand,
-                    "type": type_,
-                    "description": description,
-                    "quantity_in_stock": quantity_in_stock,
-                },
+            product_code = product_data["code"]
+
+            # --- tạo Product instance (chưa ghi DB) ---
+            product_map[product_code] = Product(
+                **product_data,
+                brand=brand,
             )
 
-            products.append(product)
+        # 4. Lấy các product đã tồn tại trong DB
+        existing_products = Product.objects.filter(code__in=product_map.keys())
 
-        return products
+        existing_code_set = {product.code for product in existing_products}
+
+        # 5. BULK CREATE (chỉ product chưa tồn tại)
+        new_products = [
+            product
+            for code, product in product_map.items()
+            if code not in existing_code_set
+        ]
+
+        Product.objects.bulk_create(new_products)
+
+        # 6. BULK UPDATE (product đã tồn tại)
+        for existing_product in existing_products:
+            new_product_data = product_map[existing_product.code]
+
+            existing_product.name = new_product_data.name
+            existing_product.origin_price = new_product_data.origin_price
+            existing_product.sale_price = new_product_data.sale_price
+            existing_product.brand = new_product_data.brand
+            existing_product.type = new_product_data.type
+            existing_product.description = new_product_data.description
+            existing_product.quantity_in_stock = new_product_data.quantity_in_stock
+
+        Product.objects.bulk_update(
+            existing_products,
+            fields=[
+                "name",
+                "origin_price",
+                "sale_price",
+                "brand",
+                "type",
+                "description",
+                "quantity_in_stock",
+            ],
+        )
+
+        # 7. Trả về toàn bộ product (new + updated)
+        return list(product_map.values())
+
+    # =========================================
+    # 4. UPLOAD IMAGE
+    # =========================================
 
     @staticmethod
     @transaction.atomic
     def upload_image(product: Product, image_files: list):
         product_images = []
         for idx, image_file in enumerate(image_files):
-            result = upload(
-                image_file.file,
+            image_info = upload_file(
+                file=image_file.file,
                 folder="product_images/",
                 public_id=f"product_{product.uid}_{idx}",
                 overwrite=True,
@@ -114,7 +135,7 @@ class ProductORM:
 
             product_image = ProductImage.objects.create(
                 product=product,
-                url=result["secure_url"],
+                url=image_info["secure_url"],
                 is_main=(idx == 0),
             )
             product_images.append(product_image)
@@ -169,19 +190,18 @@ class ProductORM:
 
     @staticmethod
     def update(product: Product, payload: ProductRequestSchema):
-        data = payload.dict(exclude_unset=True, exclude={"brand", "brand_name"})
-        for key, value in data.items():
-            setattr(product, key, value)
-
-        product_brand = Brand.objects.get(name=payload.brand_name)
-        product.brand = product_brand
+        update_data = payload.dict(exclude_unset=True, exclude={"brand", "brand_name"})
+        for field, value in update_data.items():
+            setattr(product, field, value)
+        if payload.brand_name:
+            product.brand, _ = Brand.objects.get_or_create(name=payload.brand_name)
         product.save()
         return product
 
     @staticmethod
     def on_off(product: Product):
-        product.deleted = not (product.deleted)
-        product.save()
+        product.deleted = not product.deleted
+        product.save(update_fields=["deleted"])
         return product
 
     @staticmethod

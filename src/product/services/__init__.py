@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from product.exceptions import ProductDoesNotExists, ProductFileRequired
 from product.models import Product
 from product.orm.product import ProductORM
 from product.schemas import ProductRequestSchema, SearchFilterSortSchema
@@ -9,13 +10,15 @@ class ProductService:
     def __init__(self):
         self.orm = ProductORM()
 
-    def get_product_file(self):
-        return self.orm.get_product_file()
-
     def create(self, payload: ProductRequestSchema):
         return self.orm.create(payload=payload)
 
+    def get_product_file(self):
+        return self.orm.get_product_file()
+
     def create_multiple(self, product_file):
+        if not product_file:
+            raise ProductFileRequired
         return self.orm.create_multiple(product_file=product_file)
 
     def upload_image(self, uid: UUID, image_files: list):
@@ -27,8 +30,8 @@ class ProductService:
 
     def get_by_uid(self, uid: UUID):
         product = self.orm.get_by_uid(uid=uid)
-        if not (product):
-            raise ValueError("Product is not exist")
+        if not product:
+            raise ProductDoesNotExists
         return product
 
     def update(self, uid: UUID, payload: ProductRequestSchema):
@@ -44,4 +47,4 @@ class ProductService:
         try:
             return self.orm.delete_product(product=Product.objects.get(uid=uid))
         except Product.DoesNotExist:
-            raise ValueError("Product is not exist")
+            raise ProductDoesNotExists

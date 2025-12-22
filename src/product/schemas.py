@@ -1,7 +1,7 @@
 from typing import List, Optional
 from uuid import UUID
 
-from ninja import ModelSchema, Schema
+from ninja import ModelSchema, Query, Schema
 
 from account.models import User
 from product.models import Brand, Product, ProductImage, Review
@@ -16,11 +16,11 @@ class ProductRequestSchema(ModelSchema):
 
 
 class SearchFilterSortSchema(Schema):
-    search: Optional[str] = None
-    brand: Optional[UUID] = None
-    min_price: Optional[int] = None
-    max_price: Optional[int] = None
-    sort: str = "asc"
+    search: Optional[str] = Query(None)
+    brand: Optional[UUID] = Query(None)
+    min_price: Optional[int] = Query(None)
+    max_price: Optional[int] = Query(None)
+    sort: str = Query("asc")
 
 
 class BrandResponseSchema(ModelSchema):
@@ -75,7 +75,7 @@ class ProductResponseSchema(ModelSchema):
         exclude = ["deleted", "created_at", "updated_at"]
 
     brand: BrandResponseSchema
-    images: Optional[List[ProductImageResponseSchema]]
+    images: Optional[List[ProductImageResponseSchema]] = []
 
     class Config:
         orm_mode = True
