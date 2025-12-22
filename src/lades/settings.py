@@ -28,7 +28,21 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 
 DEBUG = env == "dev"
 
-ALLOWED_HOSTS = ["*"]
+CSRF_TRUSTED_ORIGINS = [
+    "https://lades.onrender.com",
+]
+
+ALLOWED_HOSTS = [
+    "lades.onrender.com",
+    "localhost",
+    "127.0.0.1",
+]
+
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 
 INSTALLED_APPS = [
     "django.contrib.admin",
