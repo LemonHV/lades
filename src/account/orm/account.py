@@ -1,13 +1,19 @@
 import os
+from uuid import UUID
 
+from django.db.models import Prefetch
 from django.utils.timezone import now
 
 from account.exceptions import (
     BackendURLNotConfigured,
     EmailNotExists,
     InvalidOrExpiredToken,
+    ShippingInfoNotFound,
+    UserNotFound,
 )
-from account.models import AuthenticateToken, User
+from account.models import AuthenticateToken, ShippingInfo, User
+from account.schemas.account import UpdateInfoSchema
+from account.schemas.shipping_info import ShippingInfoRequestSchema
 from account.utils import get_key, send_verify_email
 
 
@@ -26,7 +32,7 @@ class AccountORM:
         if not backend_url:
             raise BackendURLNotConfigured
 
-        link = f"{backend_url}/api/account/verify-email-register/{token_object.token}"
+        link = f"{backend_url}/api/accounts/verify-email-register/{token_object.token}"
 
         send_verify_email(link=link, email=user.email, verify_type="register")
 
@@ -120,7 +126,7 @@ class AccountORM:
 
         token_object = get_key(user=user)
 
-        link = f"{backend_url}/api/account/verify-email-reset-password/{token_object.token}"
+        link = f"{backend_url}/api/accounts/verify-email-reset-password/{token_object.token}"
 
         send_verify_email(
             link=link,
@@ -170,3 +176,92 @@ class AccountORM:
         token_object.blacklisted_at = now()
 
         token_object.save(update_fields=["blacklisted_at"])
+
+    # =========================================
+    # 6. UPDATE USER INFO
+    # =========================================
+
+    @staticmethod
+    def update_info(uid: UUID, payload: UpdateInfoSchema):
+        try:
+            user = User.objects.get(uid=uid)
+        except User.DoesNotExist:
+            raise UserNotFound
+        for key, value in payload.dict().items():
+            if value is not None and hasattr(user, key):
+                setattr(user, key, value)
+
+        user.save()
+        return user
+
+    # =========================================
+    # 7. ADD SHIPPING INFO
+    # =========================================
+
+    @staticmethod
+    def add_shipping_info(uid: UUID, payload: ShippingInfoRequestSchema):
+        try:
+            user = User.objects.get(uid=uid)
+        except User.DoesNotExist:
+            raise UserNotFound
+        shipping_info = ShippingInfo(user=user, **payload.dict())
+        shipping_info.save()
+        return shipping_info
+
+    # =========================================
+    # 8. UPDATE SHIPPING INFO
+    # =========================================
+    @staticmethod
+    def update_shipping_info(id: int, payload: ShippingInfoRequestSchema):
+        try:
+            shipping_info = ShippingInfo.objects.get(id=id)
+        except User.DoesNotExist:
+            raise ShippingInfoNotFound
+        for key, value in payload.dict().items():
+            if value is not None and hasattr(shipping_info, key):
+                setattr(shipping_info, key, value)
+        shipping_info.save()
+        return shipping_info
+
+    # =========================================
+    # 9. DELETE SHIPPING INFO
+    # =========================================
+
+    @staticmethod
+    def delete_shipping_info(id: int):
+        try:
+            shipping_info = ShippingInfo.objects.get(id=id)
+        except User.DoesNotExist:
+            raise ShippingInfoNotFound
+        shipping_info.delete()
+
+    # =========================================
+    # 10. GET SHIPPING INFO
+    # =========================================
+
+    @staticmethod
+    def get_shipping_infos(uid: UUID):
+        try:
+            user = User.objects.prefetch_related(
+                Prefetch(
+                    "shipping_info_fk_user",
+                    queryset=ShippingInfo.objects.all(),
+                    to_attr="shipping_infos",
+                )
+            ).get(uid=uid)
+        except User.DoesNotExist:
+            raise UserNotFound
+
+        return getattr(user, "shipping_infos", [])
+
+    # =========================================
+    # 11. GET SHIPPING INFO BY UID
+    # =========================================
+
+    @staticmethod
+    def get_shipping_info_by_id(id: int):
+        try:
+            shipping_info = ShippingInfo.objects.get(id=id)
+        except User.DoesNotExist:
+            raise ShippingInfoNotFound
+        return shipping_info

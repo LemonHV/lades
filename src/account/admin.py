@@ -1,11 +1,11 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from .models import AuthenticateToken, ShippingAddress, User
+from .models import AuthenticateToken, ShippingInfo, User
 
 
-class ShippingAddressInline(admin.TabularInline):
-    model = ShippingAddress
+class ShippingInfoInline(admin.TabularInline):
+    model = ShippingInfo
     extra = 0
 
 
@@ -21,7 +21,7 @@ class UserAdmin(BaseUserAdmin):
         "is_superuser",
         "date_joined",
     )
-    inlines = [ShippingAddressInline]
+    inlines = [ShippingInfoInline]
     list_filter = (
         "is_active",
         "is_staff",
@@ -68,8 +68,8 @@ class UserAdmin(BaseUserAdmin):
     USERNAME_FIELD = "email"
 
 
-@admin.register(ShippingAddress)
-class ShippingAddressAdmin(admin.ModelAdmin):
+@admin.register(ShippingInfo)
+class ShippingInfoAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "user",

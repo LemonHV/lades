@@ -36,13 +36,13 @@ class BackendURLNotConfigured(APIException):
 class InvalidOrExpiredToken(APIException):
     error_code = HTTPStatus.FORBIDDEN
     message_code = "INVALID_OR_EXPIRED_TOKEN"
-    message = "Invalid or expired token"
+    message = "Token không hợp lệ hoặc hết hạn"
 
 
 class FrontendURLNotConfigured(APIException):
     error_code = HTTPStatus.INTERNAL_SERVER_ERROR
     message_code = "FRONTEND_URL_NOT_CONFIGURED"
-    message = "Frontend redirect URL is not configured"
+    message = "Frontend redirect URL chưa được thiết lập"
 
 
 class UserNotActive(APIException):
@@ -54,16 +54,28 @@ class UserNotActive(APIException):
 class EmailOrPasswordInvalid(APIException):
     error_code = HTTPStatus.FORBIDDEN
     message_code = "INVALID_EMAIL_OR_PASSWORD"
-    message = "Invalid email or password"
+    message = "Email hoặc mật khẩu không hợp lệ"
 
 
 class GoogleClientIDNotConfigured(APIException):
     error_code = HTTPStatus.INTERNAL_SERVER_ERROR
     message_code = "GOOGLE_CLIENT_ID_NOT_CONFIGURED"
-    message = "Google Client ID is not configured"
+    message = "Google Client ID không được thiết lập"
 
 
 class OldPasswordInvalid(APIException):
     error_code = HTTPStatus.FORBIDDEN
     message_code = "OLD_PASSWORD_INVALID"
     message = "Mật khẩu cũ không đúng"
+
+
+class UserNotFound(APIException):
+    error_code = HTTPStatus.BAD_REQUEST
+    message_code = "USER_NOT_FOUND"
+    message = "Người dùng không tồn tại"
+
+
+class ShippingInfoNotFound(APIException):
+    error_code = HTTPStatus.BAD_REQUEST
+    message_code = "SHIPPING_INFO_NOT_FOUND"
+    message = "Thông tin địa chỉ không tồn tại"

@@ -46,25 +46,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.email or "AnonymousUser"
 
 
-class ShippingAddress(models.Model):
-    id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(
-        to=User,
-        on_delete=models.CASCADE,
-        related_name="shipping_address_fk_user",
-        to_field="uid",
-        db_constraint=True,
-        db_index=True,
-        null=False,
-        blank=False,
-    )
-
-    address = models.CharField(max_length=255, null=False, blank=False)
-    name = models.CharField(max_length=100, null=False, blank=False)
-    phone = models.CharField(max_length=20, null=False, blank=False)
-    is_default = models.BooleanField(default=False)
-
-
 class AuthenticateToken(models.Model):
     user = models.ForeignKey(
         to=User,
@@ -96,3 +77,48 @@ class AuthenticateToken(models.Model):
         return not self.blacklisted_at and (
             self.expires_at is not None and self.expires_at >= now()
         )
+
+
+class ShippingInfo(models.Model):
+    id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(
+        to=User,
+        on_delete=models.CASCADE,
+        related_name="shipping_info_fk_user",
+        to_field="uid",
+        db_constraint=True,
+        db_index=True,
+        null=False,
+        blank=False,
+    )
+
+    address = models.CharField(max_length=255, null=False, blank=False)
+    name = models.CharField(max_length=100, null=False, blank=False)
+    phone = models.CharField(max_length=20, null=False, blank=False)
+    is_default = models.BooleanField(default=False)
+
+
+class Message(models.Model):
+    uid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    content = models.CharField(max_length=255, null=False, blank=False)
+    content = models.CharField(max_length=20, null=False, blank=False)
+    sender = models.ForeignKey(
+        to=User,
+        on_delete=models.CASCADE,
+        related_name="sender_fk_user",
+        to_field="uid",
+        db_constraint=True,
+        db_index=True,
+        null=False,
+        blank=False,
+    )
+    receiver = models.ForeignKey(
+        to=User,
+        on_delete=models.CASCADE,
+        related_name="receiver_fk_user",
+        to_field="uid",
+        db_constraint=True,
+        db_index=True,
+        null=False,
+        blank=False,
+    )

@@ -143,3 +143,6 @@ class SuccessMessage:
     # Password
     PASSWORD_RESET_SUCCESS = "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập lại."
     PASSWORD_CHANGED = "Đặt lại mật khẩu thành công."
+
+    # Shipping Address
+    SHIPPING_INFO_DELETED = "Xóa thông tin giao hàng thành công"

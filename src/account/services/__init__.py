@@ -1,4 +1,5 @@
 import os
+from uuid import UUID
 
 import requests
 
@@ -14,6 +15,8 @@ from account.exceptions import (
 )
 from account.models import User
 from account.orm.account import AccountORM
+from account.schemas.account import UpdateInfoSchema
+from account.schemas.shipping_info import ShippingInfoRequestSchema
 
 
 class AccountService:
@@ -118,3 +121,21 @@ class AccountService:
         if not new_password:
             raise PasswordRequired
         self.orm.save_password(token=token, new_password=new_password)
+
+    def update_info(self, uid: UUID, payload: UpdateInfoSchema):
+        return self.orm.update_info(uid=uid, payload=payload)
+
+    def add_shipping_info(self, uid: UUID, payload: ShippingInfoRequestSchema):
+        return self.orm.add_shipping_info(uid=uid, payload=payload)
+
+    def update_shipping_info(self, id: int, payload: ShippingInfoRequestSchema):
+        return self.orm.update_shipping_info(id=id, payload=payload)
+
+    def delete_shipping_info(self, id: int):
+        self.orm.delete_shipping_info(id=id)
+
+    def get_shipping_infos(self, uid: UUID):
+        return self.orm.get_shipping_infos(uid=uid)
+
+    def get_shipping_info_by_id(self, id: int):
+        return self.orm.get_shipping_info_by_id(id=id)
