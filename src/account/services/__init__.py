@@ -28,7 +28,7 @@ class AccountService:
             raise EmailRequired
         if not password:
             raise PasswordRequired
-        if User.objects.filter(email=email).exists():
+        if User.objects.filter(email=email, is_active=False).exists():
             raise EmailAlreadyExists
         self.orm.register(email=email, password=password)
 
