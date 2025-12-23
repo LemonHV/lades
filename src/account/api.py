@@ -48,15 +48,13 @@ class AccountAPI(Controller):
 
     @post("/login-credential", response=LoginResponseSchema)
     def login_with_credential(self, payload: CredentialSchema):
-        token = self.service.login_with_credential(
+        return self.service.login_with_credential(
             email=payload.email, password=payload.password
         )
-        return LoginResponseSchema(message=SuccessMessage.LOGIN, token=token)
 
     @post("/login-google", response=LoginResponseSchema)
     def login_with_google(self, payload: LoginGoogleSchema):
-        token = self.service.login_with_google(id_token=payload.id_token)
-        return LoginResponseSchema(token=token, message=SuccessMessage.LOGIN)
+        return self.service.login_with_google(id_token=payload.id_token)
 
     @put("/logout", auth=AuthBear(), response=MessageResponseSchema)
     def logout(self, request: AuthenticatedRequest):

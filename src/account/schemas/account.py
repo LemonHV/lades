@@ -16,7 +16,7 @@ class CredentialSchema(Schema):
 
 
 class LoginResponseSchema(Schema):
-    message: str
+    is_staff: bool
     token: str
 
 

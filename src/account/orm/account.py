@@ -12,7 +12,7 @@ from account.exceptions import (
     UserNotFound,
 )
 from account.models import AuthenticateToken, ShippingInfo, User
-from account.schemas.account import UpdateInfoSchema
+from account.schemas.account import LoginResponseSchema, UpdateInfoSchema
 from account.schemas.shipping_info import ShippingInfoRequestSchema
 from account.utils import get_key, send_verify_email
 
@@ -70,7 +70,7 @@ class AccountORM:
         return authenticate_token.token
 
     @staticmethod
-    def login_with_google(google_id: str, email: str, name: str) -> str:
+    def login_with_google(google_id: str, email: str, name: str):
         user = User.objects.filter(google_id=google_id).first()
         if user:
             return get_key(user=user).token
@@ -88,7 +88,9 @@ class AccountORM:
             name=name,
             is_active=True,
         )
-        return get_key(user=user).token
+        return LoginResponseSchema(
+            is_staff=user.is_staff, token=get_key(user=user).token
+        )
 
     # =========================================
     # 3. LOGOUT

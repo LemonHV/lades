@@ -15,7 +15,7 @@ from account.exceptions import (
 )
 from account.models import User
 from account.orm.account import AccountORM
-from account.schemas.account import UpdateInfoSchema
+from account.schemas.account import LoginResponseSchema, UpdateInfoSchema
 from account.schemas.shipping_info import ShippingInfoRequestSchema
 
 
@@ -37,7 +37,7 @@ class AccountService:
             raise InvalidOrExpiredToken
         self.orm.verify_email_register(token=token)
 
-    def login_with_credential(self, email: str, password: str) -> str:
+    def login_with_credential(self, email: str, password: str):
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
@@ -47,7 +47,9 @@ class AccountService:
 
         if not user.is_active:
             raise UserNotActive
-        return self.orm.login_with_credential(user=user)
+        return LoginResponseSchema(
+            is_staff=user.is_staff, token=self.orm.login_with_credential(user=user)
+        )
 
     @staticmethod
     def verify_id_token(id_token: str) -> dict:
@@ -74,7 +76,7 @@ class AccountService:
 
         return data
 
-    def login_with_google(self, id_token: str) -> str:
+    def login_with_google(self, id_token: str):
         if not id_token:
             raise InvalidOrExpiredToken
 
