@@ -72,7 +72,7 @@ class AccountAPI(Controller):
         )
         return MessageResponseSchema(message=SuccessMessage.PASSWORD_CHANGED)
 
-    @post("/reset-password")
+    @post("/reset-password", response=MessageResponseSchema)
     def reset_password(self, payload: ResetPasswordSchema):
         self.service.reset_password(email=payload.email)
         return MessageResponseSchema(message=SuccessMessage.RESET_PASSWORD_EMAIL_SENT)
@@ -110,7 +110,11 @@ class AccountAPI(Controller):
     def add_shipping_info(self, account_uid: UUID, payload: ShippingInfoRequestSchema):
         return self.service.add_shipping_info(uid=account_uid, payload=payload)
 
-    @get("/{account_uid}/shipping-infos", response=List[ShippingInfoResponseSchema])
+    @get(
+        "/{account_uid}/shipping-infos",
+        auth=AuthBear(),
+        response=List[ShippingInfoResponseSchema],
+    )
     def get_shipping_infos(self, account_uid: UUID):
         return self.service.get_shipping_infos(uid=account_uid)
 

@@ -23,7 +23,7 @@ from router.paginate import paginate
 from router.types import AuthenticatedRequest
 
 
-@api(prefix_or_class="products", tags=["Product"])
+@api(prefix_or_class="products", tags=["Product"], auth=None)
 class ProductController(Controller):
     def __init__(self, service: ProductService) -> None:
         self.service = service
@@ -93,7 +93,7 @@ class ProductController(Controller):
         success = self.service.delete_product(uid=uid)
         return DeleteProductResponseSchema(success=success)
 
-    @get("/{uid}/print-qrcode", auth=AuthBear())
+    @get("/{uid}/print-qrcode", auth=AuthBear(), permissions=[IsAdmin()])
     def print_qrcode(self, uid: UUID, number_qrcode: int):
         verify_codes = self.service.generate_product_verify_code(
             uid=uid, number_qrcode=number_qrcode
@@ -101,12 +101,12 @@ class ProductController(Controller):
         return generate_qrcode_pdf(verify_codes)
 
 
-@api(prefix_or_class="verifycodes", tags=["Verify Code"])
+@api(prefix_or_class="verifycodes", tags=["Verify Code"], auth=None)
 class VerifyCodeController(Controller):
     def __init__(self, service: ProductService) -> None:
         self.service = service
 
-    @get("/verify-qrcode", auth=None)
+    @get("/verify-qrcode")
     def verify_qrcode(self, code: str):
         result = self.service.verify_qrcode(code=code)
 
