@@ -175,3 +175,193 @@ def generate_qrcode_pdf(verify_codes):
     response = HttpResponse(buffer, content_type="application/pdf")
     response["Content-Disposition"] = 'attachment; filename="qr_codes.pdf"'
     return response
+
+
+VERIFY_QR_TEMPLATE = """
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xác minh sản phẩm</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #f8fafc, #eef2ff);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 420px;
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,.08);
+            animation: fadeIn .4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .status {
+            text-align: center;
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            letter-spacing: .5px;
+        }
+
+        .AUTHENTIC { color: #16a34a; }
+        .SCANNED   { color: #d97706; }
+        .FAKE      { color: #dc2626; }
+
+        .icon {
+            font-size: 48px;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .message {
+            text-align: center;
+            color: #374151;
+            margin-bottom: 20px;
+            font-size: 15px;
+        }
+
+        .divider {
+            height: 1px;
+            background: #e5e7eb;
+            margin: 20px 0;
+        }
+
+        .product img {
+            width: 100%;
+            border-radius: 14px;
+            margin-bottom: 14px;
+            object-fit: cover;
+        }
+
+        .product h3 {
+            margin: 0 0 6px;
+            font-size: 18px;
+        }
+
+        .meta {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+
+        .badge {
+            margin-top: 14px;
+            display: inline-block;
+            padding: 8px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .green {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .yellow {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .red {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 24px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="card">
+
+    <!-- ICON -->
+    <div class="icon">
+        {% if status == "AUTHENTIC" %}
+            ✅
+        {% elif status == "SCANNED" %}
+            ⚠️
+        {% else %}
+            ❌
+        {% endif %}
+    </div>
+
+    <!-- STATUS -->
+    <div class="status {{ status }}">
+        {% if status == "AUTHENTIC" %}
+            SẢN PHẨM CHÍNH HÃNG
+        {% elif status == "SCANNED" %}
+            MÃ ĐÃ ĐƯỢC QUÉT
+        {% else %}
+            CẢNH BÁO HÀNG GIẢ
+        {% endif %}
+    </div>
+
+    <!-- MESSAGE -->
+    <div class="message">
+        {{ message }}
+    </div>
+
+    {% if product %}
+        <div class="divider"></div>
+
+        <div class="product">
+            {% if product.image %}
+                <img src="{{ product.image }}" alt="Ảnh sản phẩm">
+            {% endif %}
+
+            <h3>{{ product.name }}</h3>
+
+            {% if product.brand %}
+                <div class="meta">Thương hiệu: {{ product.brand }}</div>
+            {% endif %}
+
+            {% if product.description %}
+                <div class="meta">Mô tả: {{ product.description }}</div>
+            {% endif %}
+
+            <div class="badge
+                {% if status == 'AUTHENTIC' %}green
+                {% elif status == 'SCANNED' %}yellow
+                {% else %}red{% endif %}
+            ">
+                🔍 Số lần quét: {{ scan_count }}
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="footer">
+        © {{ now|default:"2025" }} • Hệ thống xác minh sản phẩm
+    </div>
+</div>
+
+</body>
+</html>
+"""

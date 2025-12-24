@@ -4,7 +4,7 @@ from django.db import transaction
 from django.db.models import Prefetch, Q
 from django.http import HttpResponse
 
-from product.models import Brand, Product, ProductImage, Review
+from product.models import Brand, Product, ProductImage, Review, VerifyCode
 from product.schemas import ProductRequestSchema, SearchFilterSortSchema
 from product.utils import (
     build_product_workbook,
@@ -217,3 +217,58 @@ class ProductORM:
     @staticmethod
     def generate_product_verify_code(product: Product, number_qrcode: int):
         return [generate_qrcode(product) for _ in range(number_qrcode)]
+
+    @staticmethod
+    def product_info(product: Product):
+        return {
+            "name": product.name,
+            "code": product.code,
+            "brand": getattr(product, "brand", None),
+            "description": product.description,
+        }
+
+    @staticmethod
+    @transaction.atomic
+    def verify_qrcode(code: str):
+        try:
+            verify_code = (
+                VerifyCode.objects.select_for_update()
+                .select_related("product")
+                .get(code=code)
+            )
+        except VerifyCode.DoesNotExist:
+            return {
+                "status": "FAKE",
+                "message": "Mã QR không tồn tại. Có thể là hàng giả.",
+                "product": None,
+                "scan_count": 0,
+            }
+
+        if verify_code.scan_count >= verify_code.max_scan:
+            return {
+                "status": "FAKE",
+                "message": "Mã QR đã bị quét vượt số lần cho phép. Có dấu hiệu hàng giả.",
+                "product": ProductORM.product_info(product=verify_code.product),
+                "scan_count": verify_code.scan_count,
+            }
+
+        if verify_code.scan_count > 0:
+            verify_code.scan_count += 1
+            verify_code.save(update_fields=["scan_count"])
+
+            return {
+                "status": "SCANNED",
+                "message": "Mã QR đã được quét trước đó.",
+                "product": ProductORM.product_info(product=verify_code.product),
+                "scan_count": verify_code.scan_count,
+            }
+
+        verify_code.scan_count = 1
+        verify_code.save(update_fields=["scan_count"])
+
+        return {
+            "status": "AUTHENTIC",
+            "message": "Sản phẩm chính hãng.",
+            "product": ProductORM.product_info(product=verify_code.product),
+            "scan_count": verify_code.scan_count,
+        }

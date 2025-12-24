@@ -1,6 +1,8 @@
 from typing import List
 from uuid import UUID
 
+from django.http import HttpResponse
+from django.template import Context, Template
 from ninja import Query
 
 from product.schemas import (
@@ -13,7 +15,7 @@ from product.schemas import (
     SearchFilterSortSchema,
 )
 from product.services import ProductService
-from product.utils import generate_qrcode_pdf
+from product.utils import VERIFY_QR_TEMPLATE, generate_qrcode_pdf
 from router.authenticate import AuthBear
 from router.authorize import IsAdmin
 from router.controller import Controller, api, delete, get, post, put
@@ -97,3 +99,16 @@ class ProductController(Controller):
             uid=uid, number_qrcode=number_qrcode
         )
         return generate_qrcode_pdf(verify_codes)
+
+
+@api(prefix_or_class="verifycodes", tags=["Verify Code"])
+class VerifyCodeController(Controller):
+    def __init__(self, service: ProductService) -> None:
+        self.service = service
+
+    @get("/verify-qrcode")
+    def verify_qrcode(self, code: str):
+        result = self.service.verify_qrcode(code=code)
+
+        html = Template(VERIFY_QR_TEMPLATE).render(Context(result))
+        return HttpResponse(html, content_type="text/html")

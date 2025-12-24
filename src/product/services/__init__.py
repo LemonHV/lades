@@ -57,3 +57,6 @@ class ProductService:
         return self.orm.generate_product_verify_code(
             product=product, number_qrcode=number_qrcode
         )
+
+    def verify_qrcode(self, code: str):
+        return self.orm.verify_qrcode(code=code)
