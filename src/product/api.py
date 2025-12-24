@@ -106,7 +106,7 @@ class VerifyCodeController(Controller):
     def __init__(self, service: ProductService) -> None:
         self.service = service
 
-    @get("/verify-qrcode")
+    @get("/verify-qrcode", auth=None)
     def verify_qrcode(self, code: str):
         result = self.service.verify_qrcode(code=code)
 
