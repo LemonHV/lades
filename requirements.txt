@@ -29,3 +29,9 @@ google-auth
 
 django-ninja
 django-ninja-extra
+
+qrcode[pil]
+pillow
+
+reportlab
+requests

@@ -58,12 +58,11 @@ class ProductImage(models.Model):
 
 class VerifyCode(models.Model):
     uid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
-    code = models.CharField(max_length=20, null=False, blank=False)
+    code = models.CharField(max_length=255, null=False, blank=False)
     qr_url = models.TextField(null=True, blank=True)
     max_scan = models.IntegerField(null=False, blank=False, default=3)
     scan_count = models.IntegerField(null=False, blank=False, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
-    expires_at = models.DateTimeField(null=False, blank=False)
     product = models.ForeignKey(
         to=Product,
         on_delete=models.CASCADE,

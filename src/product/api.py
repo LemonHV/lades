@@ -13,6 +13,7 @@ from product.schemas import (
     SearchFilterSortSchema,
 )
 from product.services import ProductService
+from product.utils import generate_qrcode_pdf
 from router.authenticate import AuthBear
 from router.authorize import IsAdmin
 from router.controller import Controller, api, delete, get, post, put
@@ -89,3 +90,10 @@ class ProductController(Controller):
     def delete_product(self, uid: UUID):
         success = self.service.delete_product(uid=uid)
         return DeleteProductResponseSchema(success=success)
+
+    @get("/{uid}/print-qrcode", auth=AuthBear())
+    def print_qrcode(self, uid: UUID, number_qrcode: int):
+        verify_codes = self.service.generate_product_verify_code(
+            uid=uid, number_qrcode=number_qrcode
+        )
+        return generate_qrcode_pdf(verify_codes)

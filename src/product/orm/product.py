@@ -6,7 +6,12 @@ from django.http import HttpResponse
 
 from product.models import Brand, Product, ProductImage, Review
 from product.schemas import ProductRequestSchema, SearchFilterSortSchema
-from product.utils import build_product_workbook, load_product_infomation, upload_file
+from product.utils import (
+    build_product_workbook,
+    generate_qrcode,
+    load_product_infomation,
+    upload_file,
+)
 
 
 class ProductORM:
@@ -208,3 +213,7 @@ class ProductORM:
     def delete_product(product: Product):
         product.delete()
         return True
+
+    @staticmethod
+    def generate_product_verify_code(product: Product, number_qrcode: int):
+        return [generate_qrcode(product) for _ in range(number_qrcode)]

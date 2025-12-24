@@ -48,3 +48,12 @@ class ProductService:
             return self.orm.delete_product(product=Product.objects.get(uid=uid))
         except Product.DoesNotExist:
             raise ProductDoesNotExists
+
+    def generate_product_verify_code(self, uid: UUID, number_qrcode: int):
+        try:
+            product = Product.objects.get(uid=uid)
+        except Product.DoesNotExist:
+            raise ProductDoesNotExists
+        return self.orm.generate_product_verify_code(
+            product=product, number_qrcode=number_qrcode
+        )

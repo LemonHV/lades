@@ -102,3 +102,11 @@ class OnOffResponseSchema(ModelSchema):
 
 class DeleteProductResponseSchema(Schema):
     success: bool
+
+
+class VerifyCodeSchema(Schema):
+    uid: UUID
+    code: str
+    qr_url: str
+    max_scan: int
+    scan_count: int
