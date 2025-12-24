@@ -29,11 +29,11 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 DEBUG = env == "dev"
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://lades.onrender.com",
+    "https://lades-production.up.railway.app/",
 ]
 
 ALLOWED_HOSTS = [
-    "lades.onrender.com",
+    "lades-production.up.railway.app",
     "localhost",
     "127.0.0.1",
 ]
