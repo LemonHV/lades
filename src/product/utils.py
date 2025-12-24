@@ -104,7 +104,7 @@ def generate_qrcode(product: Product):
     backend_url = os.environ.get("BACKEND_URL")
     if not backend_url:
         raise BackendURLNotConfigured
-    link = f"{backend_url}/api/accounts/verify-qrcode?code={code}"
+    link = f"{backend_url}/api/verifycodes/verify-qrcode?code={code}"
     qr = qrcode.make(link)
     buffer = BytesIO()
     qr.save(buffer, format="PNG")
