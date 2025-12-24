@@ -146,3 +146,7 @@ class SuccessMessage:
 
     # Shipping Address
     SHIPPING_INFO_DELETED = "Xóa thông tin giao hàng thành công"
+
+    CART_ITEM_ADDED = "Thêm sản phẩm vào giỏ hàng thành công"
+    CART_ITEM_UPDATED = "Cập nhật sản phẩm trong xóa hàng thành công"
+    CART_ITEM_DELETED = "Xóa sản phẩm khỏi giỏ hàng thành công"
