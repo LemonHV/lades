@@ -1,7 +1,6 @@
 from django.db import transaction
 
 from account.models import User
-from cart.exceptions import CartDoesNotExists
 from cart.models import Cart, CartItem
 from cart.schemas import CartItemRequestSchema
 from product.exceptions import ProductDoesNotExists
@@ -64,27 +63,3 @@ class CartORM:
             return []
 
         return cart.cart_item_fk_cart.all()
-
-    # =========================================
-    # 5. GET CART AMOUNT
-    # =========================================
-
-    @staticmethod
-    def get_cart_total(user: User):
-        try:
-            cart = Cart.objects.get(user=user)
-        except Cart.DoesNotExist:
-            return CartDoesNotExists
-        return sum(item.total_price for item in cart.cart_item_fk_cart.all())
-
-    # =========================================
-    # 6. CLEAR CART
-    # =========================================
-
-    @staticmethod
-    def clear_cart(user: User):
-        try:
-            cart = Cart.objects.get(user=user)
-            cart.cart_item_fk_cart.all().delete()
-        except Cart.DoesNotExist:
-            raise CartDoesNotExists

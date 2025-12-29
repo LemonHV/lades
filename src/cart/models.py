@@ -19,6 +19,12 @@ class Cart(models.Model):
         blank=False,
     )
 
+    def get_total(self):
+        return sum(item.total_price for item in self.cart_item_fk_cart.all())
+
+    def clear(self):
+        self.cart_item_fk_cart.all().delete()
+
 
 class CartItem(models.Model):
     uid = models.UUIDField(primary_key=True, default=uuid4, editable=False)

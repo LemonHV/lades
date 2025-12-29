@@ -1,3 +1,9 @@
 {
-  "conventionalCommits.scopes": ["account", "product", "shipping-info", "cart"]
+  "conventionalCommits.scopes": [
+    "account",
+    "product",
+    "shipping-info",
+    "cart",
+    "order"
+  ]
 }
