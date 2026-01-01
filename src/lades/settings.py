@@ -33,7 +33,7 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 ALLOWED_HOSTS = [
-    "lades-production.up.railway.app",
+    "lades.onrender.com",
     "localhost",
     "127.0.0.1",
 ]
