@@ -102,22 +102,6 @@ class AccountAPI(Controller):
     def update_info(self, uid: UUID, payload: UpdateInfoSchema):
         return self.service.update_info(uid=uid, payload=payload)
 
-    @post(
-        "/{account_uid}/shipping-infos",
-        auth=AuthBear(),
-        response=ShippingInfoResponseSchema,
-    )
-    def add_shipping_info(self, account_uid: UUID, payload: ShippingInfoRequestSchema):
-        return self.service.add_shipping_info(uid=account_uid, payload=payload)
-
-    @get(
-        "/{account_uid}/shipping-infos",
-        auth=AuthBear(),
-        response=List[ShippingInfoResponseSchema],
-    )
-    def get_shipping_infos(self, account_uid: UUID):
-        return self.service.get_shipping_infos(uid=account_uid)
-
 
 @api(prefix_or_class="shipping-infos", tags=["ShippingInfo"], auth=None)
 class ShippingInfoAPI(Controller):
@@ -140,6 +124,24 @@ class ShippingInfoAPI(Controller):
     def delete_shipping_info(self, id: int):
         self.service.delete_shipping_info(id=id)
         return MessageResponseSchema(message=SuccessMessage.SHIPPING_INFO_DELETED)
+
+    @post(
+        "",
+        auth=AuthBear(),
+        response=ShippingInfoResponseSchema,
+    )
+    def add_shipping_info(
+        self, request: AuthenticatedRequest, payload: ShippingInfoRequestSchema
+    ):
+        return self.service.add_shipping_info(user=request.user, payload=payload)
+
+    @get(
+        "",
+        auth=AuthBear(),
+        response=List[ShippingInfoResponseSchema],
+    )
+    def get_shipping_infos(self, request: AuthenticatedRequest):
+        return self.service.get_shipping_infos(user=request.user)
 
     @get(
         "/{id}",

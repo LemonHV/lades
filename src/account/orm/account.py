@@ -1,7 +1,5 @@
 import os
 from uuid import UUID
-
-from django.db.models import Prefetch
 from django.utils.timezone import now
 
 from account.exceptions import (
@@ -212,11 +210,7 @@ class AccountORM:
     # =========================================
 
     @staticmethod
-    def add_shipping_info(uid: UUID, payload: ShippingInfoRequestSchema):
-        try:
-            user = User.objects.get(uid=uid)
-        except User.DoesNotExist:
-            raise UserNotFound
+    def add_shipping_info(user: User, payload: ShippingInfoRequestSchema):
         shipping_info = ShippingInfo(user=user, **payload.dict())
         shipping_info.save()
         return shipping_info
@@ -253,19 +247,8 @@ class AccountORM:
     # =========================================
 
     @staticmethod
-    def get_shipping_infos(uid: UUID):
-        try:
-            user = User.objects.prefetch_related(
-                Prefetch(
-                    "shipping_info_fk_user",
-                    queryset=ShippingInfo.objects.all(),
-                    to_attr="shipping_infos",
-                )
-            ).get(uid=uid)
-        except User.DoesNotExist:
-            raise UserNotFound
-
-        return getattr(user, "shipping_infos", [])
+    def get_shipping_infos(user: User):
+        return ShippingInfo.objects.filter(user=user)
 
     # =========================================
     # 11. GET SHIPPING INFO BY UID

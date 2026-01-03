@@ -127,8 +127,8 @@ class AccountService:
     def update_info(self, uid: UUID, payload: UpdateInfoSchema):
         return self.orm.update_info(uid=uid, payload=payload)
 
-    def add_shipping_info(self, uid: UUID, payload: ShippingInfoRequestSchema):
-        return self.orm.add_shipping_info(uid=uid, payload=payload)
+    def add_shipping_info(self, user: User, payload: ShippingInfoRequestSchema):
+        return self.orm.add_shipping_info(user=user, payload=payload)
 
     def update_shipping_info(self, id: int, payload: ShippingInfoRequestSchema):
         return self.orm.update_shipping_info(id=id, payload=payload)
@@ -136,8 +136,8 @@ class AccountService:
     def delete_shipping_info(self, id: int):
         self.orm.delete_shipping_info(id=id)
 
-    def get_shipping_infos(self, uid: UUID):
-        return self.orm.get_shipping_infos(uid=uid)
+    def get_shipping_infos(self, user: User):
+        return self.orm.get_shipping_infos(user=user)
 
     def get_shipping_info_by_id(self, id: int):
         return self.orm.get_shipping_info_by_id(id=id)
