@@ -1,6 +1,7 @@
 import os
 from uuid import UUID
 from django.utils.timezone import now
+from django.db import transaction
 
 from account.exceptions import (
     BackendURLNotConfigured,
@@ -266,11 +267,18 @@ class AccountORM:
     # 12. SET DEFAULT SHIPPING INFO
     # =========================================
     @staticmethod
-    def set_default_shipping_info(user: User, id: int):
+    def set_default_shipping_info(user: User, shipping_info_id: int):
         try:
-            shipping_info = ShippingInfo.objects.get(user=user, id=id)
+            shipping_info = ShippingInfo.objects.get(user=user, id=shipping_info_id)
         except ShippingInfo.DoesNotExist:
             raise ShippingInfoNotFound
-        ShippingInfo.objects.filter(user=user, is_default=True).update(is_default=False)
-        shipping_info.is_default = True
-        shipping_info.save(update_fields=["is_default"])
+
+        if shipping_info.is_default:
+            return
+
+        with transaction.atomic():
+            ShippingInfo.objects.filter(user=user, is_default=True).exclude(
+                id=shipping_info.id
+            ).update(is_default=False)
+            shipping_info.is_default = True
+            shipping_info.save(update_fields=["is_default"])
