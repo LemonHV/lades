@@ -57,11 +57,13 @@ INSTALLED_APPS = [
     "whitenoise",
     "cloudinary",
     "cloudinary_storage",
+    "channels",
     # App
     "account",
     "cart",
     "product",
     "order",
+    "chat",
 ]
 
 MIDDLEWARE = [
