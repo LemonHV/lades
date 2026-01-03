@@ -69,6 +69,11 @@ class ProductReviewResponseSchema(ModelSchema):
         orm_mode = True
 
 
+class ProductSchema(ModelSchema):
+    class Meta:
+        model = Product
+        exclude = ["deleted", "created_at", "updated_at"]
+
 class ProductResponseSchema(ModelSchema):
     class Meta:
         model = Product

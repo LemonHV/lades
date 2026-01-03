@@ -9,7 +9,7 @@ from product.schemas import ProductRequestSchema, SearchFilterSortSchema
 from product.utils import (
     build_product_workbook,
     generate_qrcode,
-    load_product_infomation,
+    load_product_information,
     upload_file,
 )
 
@@ -52,7 +52,7 @@ class ProductORM:
     @transaction.atomic
     def create_multiple(product_file):
         # 1. Load dữ liệu từ file (Excel)
-        products_data = load_product_infomation(product_file=product_file)
+        products_data = load_product_information(product_file=product_file)
 
         # 2. Cache Brand để không query DB nhiều lần
         brand_cache: dict[str, Brand] = {}
@@ -145,7 +145,7 @@ class ProductORM:
             ProductImage.objects.update_or_create(
                 product=product,
                 is_main=True,
-                defaults={"image_url": image_url["secure_url"]},
+                defaults={"url": image_url["secure_url"]},
             )
 
         # 7. Trả về toàn bộ product (new + updated)

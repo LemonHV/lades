@@ -59,7 +59,7 @@ def extract_images(sheet):
     return image_map
 
 
-def load_product_infomation(product_file) -> List[dict]:
+def load_product_information(product_file) -> List[dict]:
     workbook = openpyxl.load_workbook(product_file)
     sheet = workbook.active
     image_map = extract_images(sheet)
@@ -78,6 +78,7 @@ def load_product_infomation(product_file) -> List[dict]:
             type_,
             description,
             quantity_in_stock,
+            _,
         ) = row
 
         if not all([name, code, origin_price, sale_price, type_, quantity_in_stock]):

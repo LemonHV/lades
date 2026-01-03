@@ -11,6 +11,7 @@ from product.schemas import (
     ProductImageResponseSchema,
     ProductRequestSchema,
     ProductResponseSchema,
+    ProductSchema,
     ProductUIDResponseSchema,
     SearchFilterSortSchema,
 )
@@ -38,7 +39,7 @@ class ProductController(Controller):
 
     @post(
         "/multi-product",
-        response=List[ProductResponseSchema],
+        response=List[ProductSchema],
         auth=AuthBear(),
         permissions=[IsAdmin()],
     )
