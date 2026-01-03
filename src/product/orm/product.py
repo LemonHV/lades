@@ -1,5 +1,5 @@
 from uuid import UUID
-
+from io import BytesIO
 from django.db import transaction
 from django.db.models import Prefetch, Q
 from django.http import HttpResponse
@@ -59,10 +59,12 @@ class ProductORM:
 
         # 3. Map code -> Product instance (chưa save)
         product_map: dict[str, Product] = {}
+        image_map: dict[str, any] = {}
 
         for product_data in products_data:
             # --- tách brand_name ra ---
             brand_name = product_data.pop("brand_name", None)
+            image = product_data.pop("image", None)
 
             brand = None
             if brand_name:
@@ -79,6 +81,8 @@ class ProductORM:
                 **product_data,
                 brand=brand,
             )
+            if image:
+                image_map[product_code] = image
 
         # 4. Lấy các product đã tồn tại trong DB
         existing_products = Product.objects.filter(code__in=product_map.keys())
@@ -119,8 +123,33 @@ class ProductORM:
             ],
         )
 
+        # --- UPLOAD IMAGE ---
+
+        all_products = Product.objects.filter(code__in=product_map.keys())
+
+        for product in all_products:
+            image_object = image_map.get(product.code)
+            if not image_object:
+                continue
+
+            buffer = BytesIO(image_object._data())
+            buffer.seek(0)
+
+            image_url = upload_file(
+                buffer,
+                folder="product_images/",
+                public_id=f"product_{product.uid}_0",
+                overwrite=True,
+            )
+
+            ProductImage.objects.update_or_create(
+                product=product,
+                is_main=True,
+                defaults={"image_url": image_url["secure_url"]},
+            )
+
         # 7. Trả về toàn bộ product (new + updated)
-        return list(product_map.values())
+        return list(all_products)
 
     # =========================================
     # 4. UPLOAD IMAGE

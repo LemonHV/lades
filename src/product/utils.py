@@ -28,6 +28,7 @@ PRODUCT_HEADERS = [
     "Phân loại",
     "Mô tả",
     "Số lượng trong kho",
+    "Ảnh đại diện",
 ]
 
 
@@ -46,10 +47,22 @@ def build_product_workbook() -> BytesIO:
     return output
 
 
+def extract_images(sheet):
+    image_map = {}
+    for img in sheet._images:
+        anchor = img.anchor
+        if hasattr(anchor, "_from"):
+            row = anchor._from.row + 1
+        else:
+            row = anchor.from_.row + 1
+        image_map[row] = img
+    return image_map
+
+
 def load_product_infomation(product_file) -> List[dict]:
     workbook = openpyxl.load_workbook(product_file)
     sheet = workbook.active
-
+    image_map = extract_images(sheet)
     products = []
 
     for row_index, row in enumerate(
@@ -79,6 +92,7 @@ def load_product_infomation(product_file) -> List[dict]:
             "type": type_,
             "description": description or "",
             "quantity_in_stock": quantity_in_stock,
+            "image": image_map.get(row_index),
         }
 
         products.append(product_data)
