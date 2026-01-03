@@ -151,10 +151,11 @@ class ShippingInfoAPI(Controller):
     def get_shipping_info_by_id(self, id: int):
         return self.service.get_shipping_info_by_id(id=id)
 
-    @put("/{id}",
-        response=ShippingInfoResponseSchema,
+    @put(
+        "/{id}",
+        response=MessageResponseSchema,
         auth=AuthBear(),
     )
-    def set_default_shipping_info(self, id: int):
-        self.service.set_default_shipping_info(id=id)
+    def set_default_shipping_info(self, request: AuthenticatedRequest, id: int):
+        self.service.set_default_shipping_info(user=request.user, id=id)
         return MessageResponseSchema(message=SuccessMessage.DEFAULT_SHIPPING_INFO_SET)

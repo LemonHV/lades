@@ -266,12 +266,11 @@ class AccountORM:
     # 12. SET DEFAULT SHIPPING INFO
     # =========================================
     @staticmethod
-    def set_default_shipping_info(id: int):
+    def set_default_shipping_info(user: User, id: int):
         try:
-            shipping_info = ShippingInfo.objects.get(id=id)
+            shipping_info = ShippingInfo.objects.get(user=user, id=id)
         except ShippingInfo.DoesNotExist:
             raise ShippingInfoNotFound
-        ShippingInfo.objects.filter(user=shipping_info.user, is_default=True).update(is_default=False)
+        ShippingInfo.objects.filter(user=user, is_default=True).update(is_default=False)
         shipping_info.is_default = True
         shipping_info.save(update_fields=["is_default"])
-        
