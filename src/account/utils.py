@@ -150,3 +150,4 @@ class SuccessMessage:
     CART_ITEM_ADDED = "Thêm sản phẩm vào giỏ hàng thành công"
     CART_ITEM_UPDATED = "Cập nhật sản phẩm trong xóa hàng thành công"
     CART_ITEM_DELETED = "Xóa sản phẩm khỏi giỏ hàng thành công"
+    DEFAULT_SHIPPING_INFO_SET = "Đặt thông tin giao hàng mặc định thành công"

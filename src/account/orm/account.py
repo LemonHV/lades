@@ -222,7 +222,7 @@ class AccountORM:
     def update_shipping_info(id: int, payload: ShippingInfoRequestSchema):
         try:
             shipping_info = ShippingInfo.objects.get(id=id)
-        except User.DoesNotExist:
+        except ShippingInfo.DoesNotExist:
             raise ShippingInfoNotFound
         for key, value in payload.dict().items():
             if value is not None and hasattr(shipping_info, key):
@@ -238,7 +238,7 @@ class AccountORM:
     def delete_shipping_info(id: int):
         try:
             shipping_info = ShippingInfo.objects.get(id=id)
-        except User.DoesNotExist:
+        except ShippingInfo.DoesNotExist:
             raise ShippingInfoNotFound
         shipping_info.delete()
 
@@ -258,6 +258,20 @@ class AccountORM:
     def get_shipping_info_by_id(id: int):
         try:
             shipping_info = ShippingInfo.objects.get(id=id)
-        except User.DoesNotExist:
+        except ShippingInfo.DoesNotExist:
             raise ShippingInfoNotFound
         return shipping_info
+
+    # =========================================
+    # 12. SET DEFAULT SHIPPING INFO
+    # =========================================
+    @staticmethod
+    def set_default_shipping_info(id: int):
+        try:
+            shipping_info = ShippingInfo.objects.get(id=id)
+        except ShippingInfo.DoesNotExist:
+            raise ShippingInfoNotFound
+        ShippingInfo.objects.filter(user=shipping_info.user, is_default=True).update(is_default=False)
+        shipping_info.is_default = True
+        shipping_info.save(update_fields=["is_default"])
+        

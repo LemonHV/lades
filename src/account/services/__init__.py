@@ -141,3 +141,6 @@ class AccountService:
 
     def get_shipping_info_by_id(self, id: int):
         return self.orm.get_shipping_info_by_id(id=id)
+
+    def set_default_shipping_info(self, id: int):
+        self.orm.set_default_shipping_info(id=id)

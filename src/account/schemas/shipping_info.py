@@ -1,11 +1,11 @@
 from ninja import Schema
+from typing import Optional
 
 
 class ShippingInfoRequestSchema(Schema):
-    name: str
-    address: str
-    phone: str
-    is_default: bool
+    name: Optional[str] = None
+    address: Optional[str] = None
+    phone: Optional[str] = None
 
 
 class ShippingInfoResponseSchema(Schema):
