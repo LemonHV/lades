@@ -1,7 +1,7 @@
 from uuid import UUID
 from product.models import Product
 from product.exceptions import ProductDoesNotExists, ProductOutOfStock
-from order.utils import generate_code
+from order.utils import generate_code, generate_order_bill
 from order.schemas import OrderRequestSchema
 from order.models import Order, OrderItem, Discount
 from django.utils.timezone import now
@@ -153,3 +153,8 @@ class OrderORM:
     def get_user_orders(user: User):
         orders = Order.objects.filter(user=user).exclude(status="pending")
         return orders
+
+    @staticmethod
+    def print_order(order: Order):
+        order_items = order.order_item_fk_order.select_related('product').all()
+        return generate_order_bill(order=order, order_items=order_items)

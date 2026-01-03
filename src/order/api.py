@@ -1,5 +1,5 @@
 from router.authenticate import AuthBear
-from router.authorize import IsUser
+from router.authorize import IsUser, IsAdmin
 from router.controller import Controller, api, get, post, put
 from router.types import AuthenticatedRequest
 from order.schemas import (
@@ -32,3 +32,7 @@ class OrderAPI(Controller):
     @get("", response=List[OrderResponseSchema])
     def get_user_orders(self, request: AuthenticatedRequest):
         return self.service.get_user_orders(user=request.user)
+
+    @get("/{uid}/print", auth=AuthBear(), permissions=[IsAdmin()])
+    def print_order(self, uid: UUID):
+        return self.service.print_order(uid=uid)

@@ -26,3 +26,10 @@ class OrderService:
 
     def get_user_orders(self, user: User):
         return self.orm.get_user_orders(user=user)
+
+    def print_order(self, uid: UUID):
+        try:
+            order = Order.objects.get(uid=uid)
+        except Order.DoesNotExist:
+            raise OrderDoesNotExists
+        return self.orm.print_order(order=order)

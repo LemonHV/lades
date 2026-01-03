@@ -5,6 +5,19 @@ from enum import unique
 
 from django.db.models import TextChoices
 
+from io import BytesIO
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A6
+from reportlab.lib.units import mm
+from reportlab.graphics.barcode import code128
+from django.http import HttpResponse
+from reportlab.platypus import Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfbase import pdfmetrics
+import os
+
 
 @unique
 class OrderStatus(TextChoices):
@@ -26,3 +39,241 @@ class PaymentStatus(TextChoices):
 def generate_code(length=20):
     chars = string.ascii_uppercase + string.digits
     return "".join(random.choices(chars, k=length))
+
+
+def register_fonts():
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    ROBOTO_R_PATH = os.path.join(BASE_DIR, "Roboto-Regular.ttf")
+    ROBOTO_B_PATH = os.path.join(BASE_DIR, "Roboto-Bold.ttf")
+    pdfmetrics.registerFont(TTFont("Roboto", ROBOTO_R_PATH))
+    pdfmetrics.registerFont(TTFont("Roboto-Bold", ROBOTO_B_PATH))
+
+
+def get_logo_path():
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(BASE_DIR, "static/logo.jpg")
+
+
+def count_quantity(order_items):
+    quantity = 0
+    for oi in order_items:
+        quantity += oi.quantity
+    return quantity
+
+
+def generate_order_bill(order, order_items):
+    """
+    Generate A6 shipping order bill (PDF)
+    Layout:
+    - Header: Shop name + logo + barcode
+    - Sender / Receiver info (2 columns)
+    - Product list
+    - COD amount + signature area
+    """
+
+    buffer = BytesIO()
+    register_fonts()
+    c = canvas.Canvas(buffer, pagesize=A6)
+    width, height = A6
+
+    # ========================
+    # CONFIG
+    # ========================
+    padding = 5 * mm
+    margin = 2 * mm
+    usable_width = width - 2 * padding
+
+    # ========================
+    # PAGE BORDER
+    # ========================
+    c.rect(0.5 * mm, 0.5 * mm, width - 1 * mm, height - 1 * mm)
+
+    origin_x = padding
+    origin_y = height - padding
+
+    # ==================================================
+    # HEADER: SHOP NAME + LOGO + BARCODE
+    # ==================================================
+    header_y = origin_y
+    shop_name = "Giao hàng nhanh"
+
+    c.setFont("Roboto-Bold", 12)
+    c.drawString(origin_x, header_y, shop_name)
+
+    # --- Center logo under shop name
+    text_width = c.stringWidth(shop_name, "Roboto-Bold", 12)
+    text_center_x = origin_x + text_width / 2
+
+    logo_path = get_logo_path()
+    logo_width = 20 * mm
+    logo_height = 12 * mm
+
+    c.drawImage(
+        ImageReader(logo_path),
+        text_center_x - logo_width / 2,
+        header_y - logo_height - 4,
+        width=logo_width,
+        height=logo_height,
+        mask="auto",
+    )
+
+    # --- Barcode (right side)
+    barcode = code128.Code128(
+        order.code,
+        barHeight=8 * mm,
+        barWidth=0.15 * mm,
+    )
+
+    barcode_x = width - padding - barcode.width
+    barcode_y = header_y - barcode.height + 3
+    barcode.drawOn(c, barcode_x, barcode_y)
+
+    c.setFont("Roboto", 8)
+    c.drawString(barcode_x, barcode_y - 10, f"Mã đơn hàng: {order.code}")
+
+    # --- Divider below header
+    c.setDash(3, 2)
+    c.line(padding, barcode_y - 20, width - padding, barcode_y - 20)
+    c.setDash()
+
+    # ==================================================
+    # SENDER & RECEIVER INFO (2 COLUMNS)
+    # ==================================================
+    info_y = barcode_y - 30
+    left_x = origin_x
+    right_x = origin_x + usable_width / 2 + margin
+
+    # --- Text styles
+    styles = getSampleStyleSheet()
+    normal_style = styles["Normal"]
+    normal_style.fontName = "Roboto"
+    normal_style.fontSize = 9
+    normal_style.leading = 11
+
+    # --- Sender
+    c.setFont("Roboto-Bold", 10)
+    c.drawString(left_x, info_y, "Người gửi:")
+
+    sender_para = Paragraph(
+        "Lades Beauty<br/>127/25/2E Cô Giang, P1, Phú Nhuận",
+        normal_style,
+    )
+    _, sender_h = sender_para.wrap(usable_width / 2 - 2 * margin, 50 * mm)
+    sender_para.drawOn(c, left_x, info_y - 12 - sender_h + 11)
+
+    # --- Receiver
+    c.drawString(right_x, info_y, "Người nhận:")
+
+    receiver_para = Paragraph(
+        f"{order.name}<br/>{order.address}<br/>SĐT: {order.phone}",
+        normal_style,
+    )
+    _, receiver_h = receiver_para.wrap(usable_width / 2 - 2 * margin, 50 * mm)
+    receiver_para.drawOn(c, right_x, info_y - 12 - receiver_h + 11)
+
+    # --- Vertical divider
+    c.setDash(3, 2)
+    c.line(
+        origin_x + usable_width / 2,
+        info_y,
+        origin_x + usable_width / 2,
+        info_y - max(sender_h, receiver_h) - 5,
+    )
+    c.setDash()
+
+    # --- Horizontal divider
+    items_start_y = info_y - max(sender_h, receiver_h) - 5
+    c.setDash(3, 2)
+    c.line(padding, items_start_y, width - padding, items_start_y)
+    c.setDash()
+
+    # ==================================================
+    # PRODUCT LIST
+    # ==================================================
+    text_y = items_start_y - 10
+    c.setFont("Roboto-Bold", 10)
+    c.drawString(
+        left_x,
+        text_y,
+        f"Nội dung sản phẩm: (Tổng SL sản phẩm: {count_quantity(order_items)})",
+    )
+
+    text_y -= 8
+
+    item_style = styles["Normal"]
+    item_style.fontName = "Roboto"
+    item_style.fontSize = 9
+    item_style.leading = 12
+
+    for index, oi in enumerate(order_items, start=1):
+        para = Paragraph(
+            f"{index}. {oi.product.name} - SL: {oi.quantity}",
+            item_style,
+        )
+        _, para_h = para.wrap(usable_width - 10, 100)
+        para.drawOn(c, left_x + 5, text_y - para_h)
+        text_y -= para_h + 4
+
+    # ==================================================
+    # FOOTER DIVIDER
+    # ==================================================
+    footer_y = padding + 60
+    c.setDash(3, 2)
+    c.line(padding, footer_y, width - padding, footer_y)
+    c.setDash()
+
+    # ==================================================
+    # COD AMOUNT & SIGNATURE AREA
+    # ==================================================
+    half_width = usable_width / 2
+    right_center_x = padding + half_width + half_width / 2
+
+    # --- Labels
+    label_y = footer_y - 12
+    c.setFont("Roboto", 9)
+    c.drawString(padding, label_y, "Tiền thu Người nhận:")
+    c.drawCentredString(right_center_x, label_y, "Khối lượng tối đa: 1000g")
+
+    # --- Signature title
+    sign_title_y = label_y - 10
+    c.setFont("Roboto-Bold", 9)
+    c.drawCentredString(right_center_x, sign_title_y, "Chữ ký người nhận")
+
+    # --- Signature note (auto wrap)
+    note_y = sign_title_y - 10
+    c.setFont("Roboto", 7)
+
+    note_lines = [
+        "(Xác nhận hàng nguyên vẹn, không móp méo,",
+        "bể/vỡ)",
+    ]
+    for i, line in enumerate(note_lines):
+        c.drawCentredString(right_center_x, note_y - i * 9, line)
+
+    # --- Signature line
+    sign_line_y = note_y - len(note_lines) * 9 - 12
+    c.line(
+        right_center_x - (half_width - 12 * mm) / 2,
+        sign_line_y,
+        right_center_x + (half_width - 12 * mm) / 2,
+        sign_line_y,
+    )
+
+    # --- COD amount
+    c.setFont("Roboto-Bold", 18)
+    c.drawString(padding, note_y, f"{order.total_amount:,} VND")
+
+    # --- Delivery instruction
+    c.setFont("Roboto-Bold", 9)
+    c.drawString(padding, sign_line_y - 6, "Chỉ dẫn giao hàng: Đồng kiểm")
+
+    # ========================
+    # EXPORT PDF
+    # ========================
+    c.showPage()
+    c.save()
+    buffer.seek(0)
+
+    response = HttpResponse(buffer, content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="order_{order.code}.pdf"'
+    return response
