@@ -152,7 +152,7 @@ class ShippingInfoAPI(Controller):
         return self.service.get_shipping_info_by_id(id=id)
 
     @put(
-        "/{id}",
+        "/{id}/set-default",
         response=MessageResponseSchema,
         auth=AuthBear(),
     )
