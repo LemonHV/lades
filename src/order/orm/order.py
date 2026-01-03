@@ -2,7 +2,7 @@ from uuid import UUID
 from product.models import Product
 from product.exceptions import ProductDoesNotExists, ProductOutOfStock
 from order.utils import generate_code, generate_order_bill
-from order.schemas import OrderRequestSchema
+from order.schemas import OrderRequestSchema, DiscountRequestSchema
 from order.models import Order, OrderItem, Discount
 from django.utils.timezone import now
 from django.db import transaction
@@ -116,7 +116,7 @@ class OrderORM:
         discount_amount = 0
         if payload.discount_code:
             discount = Discount.objects.filter(code=payload.discount_code).first()
-            if not discount or not discount.is_active():
+            if not discount or not discount.is_available():
                 raise DiscountDoesNotExists
             order.discount = discount
             if discount.type == "percent":
@@ -156,5 +156,33 @@ class OrderORM:
 
     @staticmethod
     def print_order(order: Order):
-        order_items = order.order_item_fk_order.select_related('product').all()
+        order_items = order.order_item_fk_order.select_related("product").all()
         return generate_order_bill(order=order, order_items=order_items)
+
+    @staticmethod
+    def create_discount(payload: DiscountRequestSchema):
+        discount = Discount(**payload.dict())
+        discount.save()
+        return discount
+
+    @staticmethod
+    def get_discount_by_uid(uid: UUID):
+        try:
+            discount = Discount.objects.get(uid=uid)
+        except Discount.DoesNotExist:
+            raise DiscountDoesNotExists
+
+        return discount
+
+    @staticmethod
+    def get_discounts():
+        discounts = Discount.objects.get(is_active=True)
+        return discounts
+
+    @staticmethod
+    def update_discount(discount: Discount, payload: DiscountRequestSchema):
+        for field, value in payload.dict().items():
+            setattr(discount, field, value)
+        discount.save()
+        return discount
+    

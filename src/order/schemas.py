@@ -31,3 +31,26 @@ class SepayPaymentResponseSchema(Schema):
     account_no: str
     account_name: str
     transfer_content: str
+
+
+class DiscountRequestSchema(Schema):
+    name: str
+    code: str
+    type: Literal["percentage", "fixed_amount"]
+    value: int
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    min_order_amount: Optional[int] = None
+    max_usage: Optional[int] = None
+
+
+class DiscountResponseSchema(Schema):
+    uid: UUID
+    name: str
+    code: str
+    type: Literal["percentage", "fixed_amount"]
+    value: int
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    min_order_amount: Optional[int] = None
+    max_usage: Optional[int] = None

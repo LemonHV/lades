@@ -4,6 +4,7 @@
     "product",
     "shipping-info",
     "cart",
-    "order"
+    "order",
+    "discount"
   ]
 }

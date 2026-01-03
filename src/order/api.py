@@ -5,6 +5,8 @@ from router.types import AuthenticatedRequest
 from order.schemas import (
     OrderRequestSchema,
     OrderResponseSchema,
+    DiscountRequestSchema,
+    DiscountResponseSchema,
 )
 from order.services import OrderService
 from uuid import UUID
@@ -36,3 +38,25 @@ class OrderAPI(Controller):
     @get("/{uid}/print", auth=AuthBear(), permissions=[IsAdmin()])
     def print_order(self, uid: UUID):
         return self.service.print_order(uid=uid)
+
+
+@api(prefix_or_class="discounts", tags=["Discount"], auth=AuthBear())
+class DiscountAPI(Controller):
+    def __init__(self, service: OrderService):
+        self.service = service
+
+    @post("", permissions=[IsAdmin()], response=DiscountResponseSchema)
+    def create_discount(self, payload: DiscountRequestSchema):
+        return self.service.create_discount(payload=payload)
+
+    @get("/{uid}", response=DiscountResponseSchema)
+    def get_discount_by_uid(self, uid: UUID):
+        return self.service.get_discount_by_uid(uid=uid)
+
+    @get("", response=List[DiscountResponseSchema])
+    def get_discounts(self):
+        return self.service.get_discounts()
+
+    @put("/{uid}", permissions=[IsAdmin()], response=DiscountResponseSchema)
+    def update_discount(self, uid: UUID, payload: DiscountRequestSchema):
+        return self.service.update_discount(uid=uid, payload=payload)

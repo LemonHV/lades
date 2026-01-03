@@ -7,11 +7,6 @@ from order.utils import OrderStatus, PaymentStatus
 
 
 class Payment(models.Model):
-    STATUS_CHOICES = (
-        ("pending", "Pending"),
-        ("success", "Success"),
-        ("failed", "Failed"),
-    )
     uid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     code = models.CharField(max_length=255)
     method = models.CharField(max_length=50)
@@ -52,6 +47,22 @@ class Discount(models.Model):
             return False
         return True
 
+    def is_available(self, order):
+        today = now().date()
+        if self.start_time and self.start_time > today:
+            return False
+        if self.end_time and self.end_time < today:
+            return False
+        if (
+            self.max_usage is not None
+            and self.count_number_of_usage() >= self.max_usage
+        ):
+            return False
+        if self.min_order_amount is not None and order.total < self.min_order_amount:
+            return False
+
+        return True
+
     def calculate_discount_amount(self, amount: int):
         if self.type == "Percent":
             return amount * self.value / 100
@@ -60,19 +71,14 @@ class Discount(models.Model):
         else:
             return 0
 
+    def count_number_of_usage(self):
+        return self.order_fk_discount.count()
+
     def __str__(self):
         return f"{self.name} ({self.code})"
 
 
 class Order(models.Model):
-    STATUS_CHOICES = [
-        ("pending", "Pending"),
-        ("processing", "Processing"),
-        ("shipping", "Shipping"),
-        ("completed", "Completed"),
-        ("cancelled", "Cancelled"),
-    ]
-
     uid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     code = models.CharField(max_length=20, unique=True)
     order_date = models.DateField()
@@ -116,6 +122,21 @@ class Order(models.Model):
         if new_status in dict(self.STATUS_CHOICES):
             self.status = new_status
             self.save(update_fields=["status"])
+
+    def pending_count(self):
+        return Order.objects.filter(status=OrderStatus.PENDING).count()
+
+    def processing_count(self):
+        return Order.objects.filter(status=OrderStatus.PROCESSING).count()
+
+    def shipping_count(self):
+        return Order.objects.filter(status=OrderStatus.SHIPPING).count()
+
+    def completed_count(self):
+        return Order.objects.filter(status=OrderStatus.COMPLETED).count()
+
+    def cancelled_count(self):
+        return Order.objects.filter(status=OrderStatus.CANCELLED).count()
 
     def __str__(self):
         return f"Order {self.code} - {self.status}"
