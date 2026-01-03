@@ -73,14 +73,18 @@ class AccountORM:
     def login_with_google(google_id: str, email: str, name: str):
         user = User.objects.filter(google_id=google_id).first()
         if user:
-            return get_key(user=user).token
+            return LoginResponseSchema(
+                is_staff=user.is_staff, token=get_key(user=user).token
+            )
 
         user = User.objects.filter(email=email).first()
         if user:
             user.google_id = google_id
             user.is_active = True
             user.save(update_fields=["google_id", "is_active"])
-            return get_key(user=user).token
+            return LoginResponseSchema(
+                is_staff=user.is_staff, token=get_key(user=user).token
+            )
 
         user = User.objects.create(
             google_id=google_id,
