@@ -9,6 +9,8 @@ from order.schemas import (
     DiscountRequestSchema,
     DiscountResponseSchema,
 )
+from account.schemas.account import MessageResponseSchema
+from account.utils import SuccessMessage
 from order.services import OrderService
 from uuid import UUID
 from typing import List
@@ -24,9 +26,10 @@ class OrderAPI(Controller):
     def create_order(self, request: AuthenticatedRequest, payload: OrderRequestSchema):
         return self.service.create_order(user=request.user, payload=payload)
 
-    @put("/{uid}")
+    @put("/{uid}", response=MessageResponseSchema)
     def update_order_status(self, uid: UUID, status: OrderStatus):
         self.service.update_order_status(uid=uid, status=status)
+        return MessageResponseSchema(message=SuccessMessage.UPDATE_ORDER_STATUS_SUCCESS)
 
     @get("", response=List[OrderResponseSchema])
     def get_all_orders(self, request: AuthenticatedRequest):

@@ -300,7 +300,7 @@ def send_order_confirmation_email(order, email, link=None):
 
     # Thêm phí vận chuyển và tổng tiền vào cuối bảng
     shipping_fee = getattr(order, "shipping_fee", 0)
-    total_amount = getattr(order, "total_amount", 0) + shipping_fee
+    total_amount = getattr(order, "total_amount", 0)
     items_html += f"""
         <tr>
             <td colspan="2" style="padding:6px 8px; border:1px solid #ddd; text-align:right; font-weight:bold;">Phí vận chuyển</td>
@@ -335,7 +335,7 @@ def send_order_confirmation_email(order, email, link=None):
                         Đơn hàng của bạn đã được đặt thành công!<br><br>
                         <strong>Mã đơn hàng:</strong> {order.code}<br>
                         <strong>Ngày đặt:</strong> {order_date}<br>
-                        <strong>Tổng thanh toán:</strong> {order.total_amount + order.shipping_fee:,} VNĐ<br><br>
+                        <strong>Tổng thanh toán:</strong> {(order.total_amount,)} VNĐ<br><br>
 
                         <strong>Danh sách sản phẩm:</strong>
                         <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; margin-top:10px;">
