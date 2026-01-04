@@ -1,22 +1,21 @@
-import random
 import string
-
-from enum import unique
-
-from django.db.models import TextChoices
-
-from io import BytesIO
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A6
-from reportlab.lib.units import mm
-from reportlab.graphics.barcode import code128
-from django.http import HttpResponse
+import random
+import os
 from reportlab.platypus import Paragraph
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.utils import ImageReader
+from reportlab.pdfgen import canvas
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
-import os
+from reportlab.lib.utils import ImageReader
+from reportlab.lib.units import mm
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.pagesizes import A6
+from reportlab.graphics.barcode import code128
+from io import BytesIO
+from enum import unique
+from django.utils import timezone
+from django.http import HttpResponse
+from django.db.models import TextChoices
+from django.core.mail import send_mail
 
 
 @unique
@@ -277,3 +276,106 @@ def generate_order_bill(order, order_items):
     response = HttpResponse(buffer, content_type="application/pdf")
     response["Content-Disposition"] = f'attachment; filename="order_{order.code}.pdf"'
     return response
+
+
+def send_order_confirmation_email(order, email, link=None):
+    logo_url = "https://img.freepik.com/premium-vector/hand-drawn-cosmetic-brushes-gentle-brush-stroke-grunge-style-sketch-cosmetic-illustration_484720-4254.jpg?w=2000"
+
+    # Format ngày đẹp: dd/mm/yyyy HH:MM
+    order_date = timezone.localtime(order.order_date).strftime("%d/%m/%Y %H:%M")
+
+    subject = f"Xác nhận đơn hàng {order.code} tại Lades"
+    message = f"Đơn hàng {order.code} của bạn đã được đặt thành công. Xem chi tiết: {link or ''}"
+
+    # Build danh sách sản phẩm thành HTML table đẹp
+    items_html = ""
+    for item in getattr(order, "order_items", order.order_item_fk_order.all()):
+        items_html += f"""
+            <tr>
+                <td style="padding:6px 8px; border:1px solid #ddd; font-size:14px; max-width:250px; word-break:break-word;">{item.product.name}</td>
+                <td style="padding:6px 8px; border:1px solid #ddd; text-align:center; font-size:14px;">{item.quantity}</td>
+                <td style="padding:6px 8px; border:1px solid #ddd; text-align:right; font-size:14px; white-space:nowrap;">{item.total_price:,} VNĐ</td>
+            </tr>
+        """
+
+    # Thêm phí vận chuyển và tổng tiền vào cuối bảng
+    shipping_fee = getattr(order, "shipping_fee", 0)
+    total_amount = getattr(order, "total_amount", 0) + shipping_fee
+    items_html += f"""
+        <tr>
+            <td colspan="2" style="padding:6px 8px; border:1px solid #ddd; text-align:right; font-weight:bold;">Phí vận chuyển</td>
+            <td style="padding:6px 8px; border:1px solid #ddd; text-align:right; font-weight:bold;">{shipping_fee:,} VNĐ</td>
+        </tr>
+        <tr>
+            <td colspan="2" style="padding:6px 8px; border:1px solid #ddd; text-align:right; font-weight:bold;">Tổng cộng</td>
+            <td style="padding:6px 8px; border:1px solid #ddd; text-align:right; font-weight:bold;">{total_amount:,} VNĐ</td>
+        </tr>
+    """
+
+    html_message = f"""
+    <!DOCTYPE html>
+    <html>
+    <body style="margin:0; padding:0; background-color:#f8f8f8; font-family: Arial, Helvetica, sans-serif;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+            <td align="center">
+            <table width="600" cellpadding="0" cellspacing="0" style="padding:40px; background-color:#ffffff; border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.1);">
+                <tr>
+                    <td align="center" style="padding-bottom:30px;">
+                        <img src="{logo_url}" alt="Lades" width="120" style="display:block;">
+                    </td>
+                </tr>
+                <tr>
+                    <td style="color:#333333; font-size:16px; padding-bottom:20px;">
+                        Xin chào <strong>{order.name}</strong>,
+                    </td>
+                </tr>
+                <tr>
+                    <td style="color:#333333; font-size:14px; line-height:1.6;">
+                        Đơn hàng của bạn đã được đặt thành công!<br><br>
+                        <strong>Mã đơn hàng:</strong> {order.code}<br>
+                        <strong>Ngày đặt:</strong> {order_date}<br>
+                        <strong>Tổng thanh toán:</strong> {order.total_amount + order.shipping_fee:,} VNĐ<br><br>
+
+                        <strong>Danh sách sản phẩm:</strong>
+                        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; margin-top:10px;">
+                            <thead style="background-color:#006241; color:#ffffff;">
+                                <tr>
+                                    <th style="padding:8px; border:1px solid #ddd; text-align:left;">Sản phẩm</th>
+                                    <th style="padding:8px; border:1px solid #ddd; text-align:center;">Số lượng</th>
+                                    <th style="padding:8px; border:1px solid #ddd; text-align:right;">Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {items_html}
+                            </tbody>
+                        </table><br>
+
+                        {f'<a href="{link}" style="display:inline-block;padding:12px 24px;background-color:#006241;color:#ffffff;text-decoration:none;border-radius:4px;">Xem chi tiết đơn hàng</a>' if link else ""}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:30px 0;"><hr style="border:none; border-top:1px solid #dddddd;"></td>
+                </tr>
+                <tr>
+                    <td style="padding-top:20px; font-size:12px; color:#999999; line-height:1.5;">
+                        Email này được gửi tự động, vui lòng không phản hồi.<br>
+                        © 2025 Lades. Bảo lưu mọi quyền.
+                    </td>
+                </tr>
+            </table>
+            </td>
+        </tr>
+        </table>
+    </body>
+    </html>
+    """
+
+    send_mail(
+        subject=subject,
+        message=message,
+        from_email=os.environ.get("DEFAULT_FROM_EMAIL"),
+        recipient_list=[email],
+        html_message=html_message,
+        fail_silently=False,
+    )
