@@ -77,7 +77,7 @@ class ProductSchema(ModelSchema):
 class ProductResponseSchema(ModelSchema):
     class Meta:
         model = Product
-        exclude = ["deleted", "created_at", "updated_at"]
+        exclude = ["created_at", "updated_at"]
 
     brand: BrandResponseSchema
     images: Optional[List[ProductImageResponseSchema]] = []

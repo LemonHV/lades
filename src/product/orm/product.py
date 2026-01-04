@@ -178,7 +178,7 @@ class ProductORM:
 
     @staticmethod
     def get_all(payload: SearchFilterSortSchema):
-        query = Q(deleted=False)
+        query = Q()
         if payload.search:
             query &= Q(name__icontains=payload.search)
         if payload.brand:
