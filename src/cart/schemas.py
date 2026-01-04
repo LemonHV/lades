@@ -6,7 +6,6 @@ from product.schemas import ProductResponseSchema
 
 class CartItemRequestSchema(Schema):
     product_uid: UUID
-    price: int
     quantity: int
 
 

@@ -24,13 +24,13 @@ class CartORM:
         try:
             cart_item = CartItem.objects.get(cart=cart, product=product)
             cart_item.quantity += payload.quantity
-            cart_item.price = payload.price
+            cart_item.price = product.sale_price
             cart_item.save()
         except CartItem.DoesNotExist:
             cart_item = CartItem.objects.create(
                 cart=cart,
                 product=product,
-                price=payload.price,
+                price=product.sale_price,
                 quantity=payload.quantity,
             )
 
