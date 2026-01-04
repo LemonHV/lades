@@ -1,19 +1,38 @@
 from ninja import Schema
-from typing import List, Literal, Optional
+from typing import Literal, Optional
 from uuid import UUID
+from pydantic import model_validator
 
 
-class OrderItemRequestSchema(Schema):
+class BuyNowItemSchema(Schema):
     product_uid: UUID
     quantity: int
 
 
 class OrderRequestSchema(Schema):
     source: Literal["buy_now", "cart"]
+    order_items: Optional[list[BuyNowItemSchema]] = None
+    cart_item_uids: Optional[list[UUID]] = None
+
     shipping_info_id: int
-    note: Optional[str] = None
     discount_code: Optional[str] = None
-    order_items: List[OrderItemRequestSchema]
+    note: Optional[str] = None
+
+    @model_validator(mode="after")
+    def validate_source(self):
+        if self.source == "buy_now":
+            if not self.order_items:
+                raise ValueError("order_items is required when source=buy_now")
+            if self.cart_item_uids:
+                raise ValueError("cart_item_uids is not allowed when source=buy_now")
+
+        if self.source == "cart":
+            if not self.cart_item_uids:
+                raise ValueError("cart_item_uids is required when source=cart")
+            if self.order_items:
+                raise ValueError("order_items is not allowed when source=cart")
+
+        return self
 
 
 class OrderResponseSchema(Schema):

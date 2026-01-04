@@ -25,13 +25,15 @@ class OrderORM:
         # 1. GET ITEMS
         # ================================
         if payload.source == "buy_now":
-            items = payload.order_items
+            buy_items = payload.order_items
+            cart_items = None
         else:
-            product_uids = [item.product_uid for item in payload.order_items]
-            cart_items = CartItem.objects.select_related("product").filter(
-                cart__user=user, product__uid__in=product_uids
+            cart_items = (
+                CartItem.objects.select_related("product")
+                .select_for_update()
+                .filter(cart__user=user, uid__in=payload.cart_item_uids)
             )
-            items = cart_items
+            buy_items = None
 
         # ================================
         # 2. SHIPPING INFO
@@ -42,7 +44,7 @@ class OrderORM:
             raise ShippingInfoDoesNotExists
 
         # ================================
-        # 3. CREATE ORDER (PENDING)
+        # 3. CREATE ORDER
         # ================================
         order = Order.objects.create(
             code=generate_code(),
@@ -66,11 +68,11 @@ class OrderORM:
 
         if payload.source == "buy_now":
             products = Product.objects.select_for_update().in_bulk(
-                [item.product_uid for item in items],
+                [item.product_uid for item in buy_items],
                 field_name="uid",
             )
 
-            for item in items:
+            for item in buy_items:
                 product = products.get(item.product_uid)
                 if not product:
                     raise ProductDoesNotExists
@@ -84,13 +86,14 @@ class OrderORM:
                     price=product.sale_price,
                     quantity=item.quantity,
                 )
+
                 product.quantity_in_stock -= item.quantity
                 product.save(update_fields=["quantity_in_stock"])
 
                 items_total += product.sale_price * item.quantity
 
         else:
-            for cart_item in items:
+            for cart_item in cart_items:
                 product = cart_item.product
 
                 if cart_item.quantity > product.quantity_in_stock:
@@ -118,11 +121,13 @@ class OrderORM:
             discount = Discount.objects.filter(code=payload.discount_code).first()
             if not discount or not discount.is_available():
                 raise DiscountDoesNotExists
+
             order.discount = discount
-            if discount.type == "percent":
-                discount_amount = items_total * discount.value // 100
-            else:
-                discount_amount = discount.value
+            discount_amount = (
+                items_total * discount.value // 100
+                if discount.type == "percent"
+                else discount.value
+            )
 
         # ================================
         # 6. UPDATE TOTAL
@@ -185,4 +190,3 @@ class OrderORM:
             setattr(discount, field, value)
         discount.save()
         return discount
-    
