@@ -1,10 +1,10 @@
 from django.db import transaction
-
+from django.db.models import Prefetch
 from account.models import User
 from cart.models import Cart, CartItem
 from cart.schemas import CartItemRequestSchema
 from product.exceptions import ProductDoesNotExists
-from product.models import Product
+from product.models import Product, ProductImage
 
 
 class CartORM:
@@ -62,4 +62,10 @@ class CartORM:
         except Cart.DoesNotExist:
             return []
 
-        return cart.cart_item_fk_cart.all()
+        return cart.cart_item_fk_cart.select_related("product").prefetch_related(
+            Prefetch(
+                "product__image_fk_product",
+                queryset=ProductImage.objects.all(),
+                to_attr="images",
+            )
+        )

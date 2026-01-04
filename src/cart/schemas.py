@@ -1,6 +1,7 @@
 from uuid import UUID
-
-from ninja import Schema
+from ninja import Schema, ModelSchema
+from cart.models import CartItem
+from product.schemas import ProductResponseSchema
 
 
 class CartItemRequestSchema(Schema):
@@ -9,10 +10,12 @@ class CartItemRequestSchema(Schema):
     quantity: int
 
 
-class CartItemResponseSchema(Schema):
-    uid: UUID
-    price: int
-    quantity: int
+class CartItemResponseSchema(ModelSchema):
+    product: ProductResponseSchema
+
+    class Meta:
+        model = CartItem
+        fields = ["uid", "quantity"]
 
 
 class UpdateQuantityCartITemSchema(Schema):
