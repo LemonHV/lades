@@ -5,6 +5,7 @@ from router.types import AuthenticatedRequest
 from order.schemas import (
     OrderRequestSchema,
     OrderResponseSchema,
+    OrderCreateResponseSchema,
     DiscountRequestSchema,
     DiscountResponseSchema,
 )
@@ -19,7 +20,7 @@ class OrderAPI(Controller):
     def __init__(self, service: OrderService):
         self.service = service
 
-    @post("", response=OrderResponseSchema, permissions=[IsUser()])
+    @post("", response=OrderCreateResponseSchema, permissions=[IsUser()])
     def create_order(self, request: AuthenticatedRequest, payload: OrderRequestSchema):
         return self.service.create_order(user=request.user, payload=payload)
 
@@ -34,6 +35,10 @@ class OrderAPI(Controller):
     @get("", response=List[OrderResponseSchema])
     def get_user_orders(self, request: AuthenticatedRequest):
         return self.service.get_user_orders(user=request.user)
+
+    @get("", response=List[OrderResponseSchema], permissions=[IsAdmin()])
+    def get_admin_orders(self):
+        return self.service.get_admin_orders()
 
     @get("/{uid}/print", auth=AuthBear(), permissions=[IsAdmin()])
     def print_order(self, uid: UUID):

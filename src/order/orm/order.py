@@ -1,11 +1,12 @@
 from uuid import UUID
-from product.models import Product
+from product.models import Product, ProductImage
 from product.exceptions import ProductDoesNotExists, ProductOutOfStock
 from order.utils import generate_code, generate_order_bill
 from order.schemas import OrderRequestSchema, DiscountRequestSchema
 from order.models import Order, OrderItem, Discount
 from django.utils.timezone import now
 from django.db import transaction
+from django.db.models import Prefetch
 from cart.models import CartItem
 from account.models import User, ShippingInfo
 from order.exceptions import (
@@ -144,20 +145,69 @@ class OrderORM:
         order.save(update_fields=["status"])
 
     @staticmethod
-    def get_order_by_uid(uid: UUID):
+    def get_order_by_uid(uid: UUID) -> Order:
         try:
-            order = Order.objects.prefetch_related("order_item_fk_order__product").get(
-                uid=uid
-            )
+            return Order.objects.prefetch_related(
+                Prefetch(
+                    "order_item_fk_order",
+                    queryset=OrderItem.objects.select_related(
+                        "product"
+                    ).prefetch_related(
+                        Prefetch(
+                            "product__image_fk_product",
+                            queryset=ProductImage.objects.all(),
+                            to_attr="images",
+                        )
+                    ),
+                    to_attr="order_items",
+                )
+            ).get(uid=uid)
         except Order.DoesNotExist:
             raise OrderDoesNotExists
 
-        return order
-
     @staticmethod
     def get_user_orders(user: User):
-        orders = Order.objects.filter(user=user).exclude(status="pending")
-        return orders
+        return (
+            Order.objects.filter(user=user)
+            .prefetch_related(
+                Prefetch(
+                    "order_item_fk_order",
+                    queryset=OrderItem.objects.select_related(
+                        "product"
+                    ).prefetch_related(
+                        Prefetch(
+                            "product__image_fk_product",
+                            queryset=ProductImage.objects.all(),
+                            to_attr="images",
+                        )
+                    ),
+                    to_attr="order_items",
+                )
+            )
+            .order_by("-order_date")
+        )
+
+    @staticmethod
+    def get_admin_orders():
+        return (
+            Order.objects.all()
+            .prefetch_related(
+                Prefetch(
+                    "order_item_fk_order",
+                    queryset=OrderItem.objects.select_related(
+                        "product"
+                    ).prefetch_related(
+                        Prefetch(
+                            "product__image_fk_product",
+                            queryset=ProductImage.objects.all(),
+                            to_attr="images",
+                        )
+                    ),
+                    to_attr="order_items",
+                )
+            )
+            .order_by("-order_date")
+        )
 
     @staticmethod
     def print_order(order: Order):

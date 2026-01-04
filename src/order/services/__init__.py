@@ -26,6 +26,9 @@ class OrderService:
 
     def get_user_orders(self, user: User):
         return self.orm.get_user_orders(user=user)
+    
+    def get_admin_orders(self):
+        return self.orm.get_admin_orders()
 
     def print_order(self, uid: UUID):
         try:

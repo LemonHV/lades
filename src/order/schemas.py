@@ -1,7 +1,9 @@
-from ninja import Schema
-from typing import Literal, Optional
+from ninja import Schema, ModelSchema
+from typing import Literal, Optional, List
 from uuid import UUID
 from pydantic import model_validator
+from order.models import Order, OrderItem
+from product.schemas import ProductResponseSchema
 
 
 class BuyNowItemSchema(Schema):
@@ -35,11 +37,30 @@ class OrderRequestSchema(Schema):
         return self
 
 
-class OrderResponseSchema(Schema):
+class OrderCreateResponseSchema(Schema):
     uid: UUID
     code: str
     status: str
     total_amount: int
+
+
+class OrderItemResponseSchema(ModelSchema):
+    product: ProductResponseSchema
+
+    class Meta:
+        model = OrderItem
+        fields = ["uid", "price", "quantity"]
+
+    class Config:
+        orm_mode = True
+
+
+class OrderResponseSchema(ModelSchema):
+    order_items: List[OrderItemResponseSchema]
+
+    class Meta:
+        model = Order
+        exclude = ["user", "payment", "discount"]
 
 
 class SepayPaymentResponseSchema(Schema):
