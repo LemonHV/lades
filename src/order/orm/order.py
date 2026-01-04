@@ -1,8 +1,16 @@
 from uuid import UUID
 from product.models import Product, ProductImage
 from product.exceptions import ProductDoesNotExists, ProductOutOfStock
-from order.utils import generate_code, generate_order_bill, send_order_confirmation_email
-from order.schemas import OrderRequestSchema, DiscountRequestSchema
+from order.utils import (
+    generate_code,
+    generate_order_bill,
+    send_order_confirmation_email,
+)
+from order.schemas import (
+    OrderRequestSchema,
+    DiscountRequestSchema,
+    UpdateOrderStatusSchema,
+)
 from order.models import Order, OrderItem, Discount
 from django.utils.timezone import now
 from django.db import transaction
@@ -14,8 +22,6 @@ from order.exceptions import (
     OrderDoesNotExists,
     DiscountDoesNotExists,
 )
-
-from order.utils import OrderStatus
 
 
 class OrderORM:
@@ -144,8 +150,8 @@ class OrderORM:
         return order
 
     @staticmethod
-    def update_order_status(order: Order, status: OrderStatus):
-        order.status = status
+    def update_order_status(order: Order, payload: UpdateOrderStatusSchema):
+        order.status = payload.status
         order.save(update_fields=["status"])
 
     @staticmethod

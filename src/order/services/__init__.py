@@ -1,8 +1,11 @@
 from order.orm.order import OrderORM
 from order.models import Order
-from order.schemas import OrderRequestSchema, DiscountRequestSchema
+from order.schemas import (
+    OrderRequestSchema,
+    DiscountRequestSchema,
+    UpdateOrderStatusSchema,
+)
 from order.exceptions import OrderDoesNotExists
-from order.utils import OrderStatus
 from account.models import User
 from uuid import UUID
 
@@ -14,19 +17,19 @@ class OrderService:
     def create_order(self, user: User, payload: OrderRequestSchema):
         return self.orm.create_order(user=user, payload=payload)
 
-    def update_order_status(self, uid: UUID, status: OrderStatus):
+    def update_order_status(self, uid: UUID, payload: UpdateOrderStatusSchema):
         try:
             order = Order.objects.get(uid=uid)
         except Order.DoesNotExist:
             raise OrderDoesNotExists
-        self.orm.update_order_status(order=order, status=status)
+        self.orm.update_order_status(order=order, payload=payload)
 
     def get_order_by_uid(self, uid: UUID):
         return self.orm.get_order_by_uid(uid=uid)
 
     def get_user_orders(self, user: User):
         return self.orm.get_user_orders(user=user)
-    
+
     def get_admin_orders(self):
         return self.orm.get_admin_orders()
 
@@ -39,14 +42,13 @@ class OrderService:
 
     def create_discount(self, payload: DiscountRequestSchema):
         return self.orm.create_discount(payload=payload)
-    
+
     def get_discount_by_uid(self, uid: UUID):
         return self.orm.get_discount_by_uid(uid=uid)
-    
+
     def get_discounts(self):
         return self.orm.get_discounts()
-    
+
     def update_discount(self, uid: UUID, payload: DiscountRequestSchema):
         discount = self.orm.get_discount_by_uid(uid=uid)
         return self.orm.update_discount(discount=discount, payload=payload)
-    

@@ -4,7 +4,7 @@ from uuid import UUID
 from pydantic import model_validator
 from order.models import Order, OrderItem
 from product.schemas import ProductResponseSchema
-
+from order.utils import OrderStatus
 
 class BuyNowItemSchema(Schema):
     product_uid: UUID
@@ -61,6 +61,10 @@ class OrderResponseSchema(ModelSchema):
     class Meta:
         model = Order
         exclude = ["user", "payment", "discount"]
+
+
+class UpdateOrderStatusSchema(Schema):
+    status: OrderStatus
 
 
 class SepayPaymentResponseSchema(Schema):

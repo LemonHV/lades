@@ -8,13 +8,13 @@ from order.schemas import (
     OrderCreateResponseSchema,
     DiscountRequestSchema,
     DiscountResponseSchema,
+    UpdateOrderStatusSchema,
 )
 from account.schemas.account import MessageResponseSchema
 from account.utils import SuccessMessage
 from order.services import OrderService
 from uuid import UUID
 from typing import List
-from order.utils import OrderStatus
 
 
 @api(prefix_or_class="orders", tags=["Order"], auth=AuthBear())
@@ -27,8 +27,8 @@ class OrderAPI(Controller):
         return self.service.create_order(user=request.user, payload=payload)
 
     @put("/{uid}", response=MessageResponseSchema)
-    def update_order_status(self, uid: UUID, status: OrderStatus):
-        self.service.update_order_status(uid=uid, status=status)
+    def update_order_status(self, uid: UUID, payload: UpdateOrderStatusSchema):
+        self.service.update_order_status(uid=uid, payload=payload)
         return MessageResponseSchema(message=SuccessMessage.UPDATE_ORDER_STATUS_SUCCESS)
 
     @get("", response=List[OrderResponseSchema])
