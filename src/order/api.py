@@ -28,17 +28,16 @@ class OrderAPI(Controller):
     def update_order_status(self, uid: UUID, status: OrderStatus):
         self.service.update_order_status(uid=uid, status=status)
 
+    @get("", response=List[OrderResponseSchema])
+    def get_all_orders(self, request: AuthenticatedRequest):
+        if request.user.is_staff:
+            return self.service.get_admin_orders()
+        else:
+            return self.service.get_user_orders(user=request.user)
+
     @get("/{uid}", response=OrderResponseSchema)
     def get_order_by_uid(self, uid: UUID):
         return self.service.get_order_by_uid(uid=uid)
-
-    @get("/me", response=List[OrderResponseSchema])
-    def get_user_orders(self, request: AuthenticatedRequest):
-        return self.service.get_user_orders(user=request.user)
-
-    @get("", response=List[OrderResponseSchema], permissions=[IsAdmin()])
-    def get_admin_orders(self):
-        return self.service.get_admin_orders()
 
     @get("/{uid}/print", auth=AuthBear(), permissions=[IsAdmin()])
     def print_order(self, uid: UUID):
