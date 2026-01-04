@@ -32,7 +32,7 @@ class OrderAPI(Controller):
     def get_order_by_uid(self, uid: UUID):
         return self.service.get_order_by_uid(uid=uid)
 
-    @get("", response=List[OrderResponseSchema])
+    @get("/me", response=List[OrderResponseSchema])
     def get_user_orders(self, request: AuthenticatedRequest):
         return self.service.get_user_orders(user=request.user)
 
