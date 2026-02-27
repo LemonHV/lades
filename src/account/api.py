@@ -80,7 +80,7 @@ class AccountAPI(Controller):
     @get("/verify-email-reset-password/{token}")
     def verify_email_reset_password(self, token: str):
         user = self.service.verify_email_reset_password(token=token)
-        new_token = get_key(user=user)
+        new_token = get_key(user=user, key_type="reset_password")
         frontend_url = os.environ.get("FRONTEND_RESET_PASSWORD_URL")
         if not frontend_url:
             raise FrontendURLNotConfigured

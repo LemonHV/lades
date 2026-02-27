@@ -8,7 +8,7 @@ from django.utils.timezone import now
 from account.models import AuthenticateToken, User
 
 
-def generate_key(user: User) -> AuthenticateToken:
+def generate_key(user: User, key_type: str) -> AuthenticateToken:
     secret_key = os.environ.get("SECRET_KEY")
     if not secret_key:
         raise ValueError("SECRET_KEY is not set in environment variables")
@@ -35,7 +35,7 @@ def generate_key(user: User) -> AuthenticateToken:
     return token_object
 
 
-def get_key(user: User) -> AuthenticateToken:
+def get_key(user: User, key_type: str) -> AuthenticateToken:
     token = (
         AuthenticateToken.objects.filter(
             user=user, blacklisted_at__isnull=True, expires_at__gte=now()
@@ -43,7 +43,7 @@ def get_key(user: User) -> AuthenticateToken:
         .order_by("-created_at")
         .first()
     )
-    return token or generate_key(user=user)
+    return token or generate_key(user=user, key_type=key_type)
 
 
 def send_verify_email(link: str, email: str, verify_type: str):

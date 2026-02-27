@@ -35,7 +35,7 @@ class AccountORM:
             user = User(email=email, is_active=False)
             user.set_password(password)
             user.save()
-        token_object = get_key(user=user)
+        token_object = get_key(user=user, key_type="register")
         backend_url = os.environ.get("BACKEND_URL")
         if not backend_url:
             raise BackendURLNotConfigured
@@ -73,7 +73,7 @@ class AccountORM:
 
     @staticmethod
     def login_with_credential(user: User) -> str:
-        authenticate_token = get_key(user=user)
+        authenticate_token = get_key(user=user, key_type="login")
         return authenticate_token.token
 
     @staticmethod
@@ -81,7 +81,7 @@ class AccountORM:
         user = User.objects.filter(google_id=google_id).first()
         if user:
             return LoginResponseSchema(
-                is_staff=user.is_staff, token=get_key(user=user).token
+                is_staff=user.is_staff, token=get_key(user=user, key_type="login").token
             )
 
         user = User.objects.filter(email=email).first()
@@ -90,7 +90,7 @@ class AccountORM:
             user.is_active = True
             user.save(update_fields=["google_id", "is_active"])
             return LoginResponseSchema(
-                is_staff=user.is_staff, token=get_key(user=user).token
+                is_staff=user.is_staff, token=get_key(user=user, key_type="login").token
             )
 
         user = User.objects.create(
@@ -100,7 +100,7 @@ class AccountORM:
             is_active=True,
         )
         return LoginResponseSchema(
-            is_staff=user.is_staff, token=get_key(user=user).token
+            is_staff=user.is_staff, token=get_key(user=user, key_type="login").token
         )
 
     # =========================================
@@ -144,7 +144,7 @@ class AccountORM:
         if not backend_url:
             raise BackendURLNotConfigured
 
-        token_object = get_key(user=user)
+        token_object = get_key(user=user, key_type="reset_password")
 
         link = f"{backend_url}/api/accounts/verify-email-reset-password/{token_object.token}"
 
