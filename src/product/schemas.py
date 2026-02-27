@@ -1,6 +1,6 @@
 from typing import List, Optional
 from uuid import UUID
-
+from pydantic import ConfigDict
 from ninja import ModelSchema, Query, Schema
 
 from account.models import User
@@ -28,8 +28,7 @@ class BrandResponseSchema(ModelSchema):
         model = Brand
         fields = ["uid", "name"]
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProductImageResponseSchema(ModelSchema):
@@ -37,8 +36,7 @@ class ProductImageResponseSchema(ModelSchema):
         model = ProductImage
         fields = ["id", "url", "is_main"]
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserResponseSchema(ModelSchema):
@@ -46,8 +44,7 @@ class UserResponseSchema(ModelSchema):
         model = User
         fields = ["uid", "name", "email"]
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProductReviewResponseSchema(ModelSchema):
@@ -65,14 +62,14 @@ class ProductReviewResponseSchema(ModelSchema):
             "user",
         ]
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProductSchema(ModelSchema):
     class Meta:
         model = Product
         exclude = ["deleted", "created_at", "updated_at"]
+
 
 class ProductResponseSchema(ModelSchema):
     class Meta:
@@ -82,8 +79,7 @@ class ProductResponseSchema(ModelSchema):
     brand: BrandResponseSchema
     images: Optional[List[ProductImageResponseSchema]] = []
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProductUIDResponseSchema(ModelSchema):
@@ -95,8 +91,7 @@ class ProductUIDResponseSchema(ModelSchema):
     images: Optional[List[ProductImageResponseSchema]]
     reviews: Optional[List[ProductReviewResponseSchema]]
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OnOffResponseSchema(ModelSchema):

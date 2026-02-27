@@ -1,7 +1,7 @@
 from ninja import Schema, ModelSchema
 from typing import Literal, Optional, List
 from uuid import UUID
-from pydantic import model_validator
+from pydantic import model_validator, ConfigDict
 from order.models import Order, OrderItem
 from product.schemas import ProductResponseSchema
 from order.utils import OrderStatus
@@ -51,8 +51,7 @@ class OrderItemResponseSchema(ModelSchema):
         model = OrderItem
         fields = ["uid", "price", "quantity"]
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OrderResponseSchema(ModelSchema):

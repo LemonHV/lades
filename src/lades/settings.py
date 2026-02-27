@@ -28,9 +28,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 
 DEBUG = env == "dev"
 
-CSRF_TRUSTED_ORIGINS = [
-    "https://lades-production.up.railway.app/",
-]
+CSRF_TRUSTED_ORIGINS = ["https://lades.onrender.com"]
 
 ALLOWED_HOSTS = [
     "lades.onrender.com",
@@ -38,8 +36,8 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
 ]
 
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = env == "prod"
+SESSION_COOKIE_SECURE = env == "prod"
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
@@ -68,6 +66,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -75,7 +74,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
     # Custom middleware
     "router.middleware.APIMiddleware",
 ]
@@ -156,7 +154,6 @@ LOGIN_URL = "/admin/login/"
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "static/"
-STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 FIXTURE_DIRS = "fixtures"
 
@@ -182,7 +179,7 @@ CLOUDINARY_STORAGE = {
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND")
 EMAIL_HOST = os.getenv("EMAIL_HOST")
 EMAIL_PORT = os.getenv("EMAIL_PORT")
-EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS")
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS") == "True"
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
