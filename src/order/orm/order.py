@@ -146,7 +146,7 @@ class OrderORM:
         # ================================
         # 7. SEND CONFIRMATION EMAIL
         # ================================
-        # send_order_confirmation_email(order=order, email=user.email)
+        send_order_confirmation_email(order=order, email=user.email)
         return order
 
     @staticmethod

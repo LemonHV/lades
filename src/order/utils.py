@@ -335,7 +335,7 @@ def send_order_confirmation_email(order, email, link=None):
                         Đơn hàng của bạn đã được đặt thành công!<br><br>
                         <strong>Mã đơn hàng:</strong> {order.code}<br>
                         <strong>Ngày đặt:</strong> {order_date}<br>
-                        <strong>Tổng thanh toán:</strong> {(order.total_amount,)} VNĐ<br><br>
+                        <strong>Tổng thanh toán:</strong> {order.total_amount} VNĐ<br><br>
 
                         <strong>Danh sách sản phẩm:</strong>
                         <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; margin-top:10px;">
