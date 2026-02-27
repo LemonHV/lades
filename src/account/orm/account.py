@@ -202,11 +202,7 @@ class AccountORM:
     # =========================================
 
     @staticmethod
-    def update_info(uid: UUID, payload: UpdateInfoSchema):
-        try:
-            user = User.objects.get(uid=uid)
-        except User.DoesNotExist:
-            raise UserNotFound
+    def update_info(user: User, payload: UpdateInfoSchema):
         for key, value in payload.dict().items():
             if value is not None and hasattr(user, key):
                 setattr(user, key, value)

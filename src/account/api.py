@@ -98,9 +98,9 @@ class AccountAPI(Controller):
     def get_info(self, request: AuthenticatedRequest):
         return request.user
 
-    @put("/{uid}", response=UpdateInfoSchema, auth=AuthBear())
-    def update_info(self, uid: UUID, payload: UpdateInfoSchema):
-        return self.service.update_info(uid=uid, payload=payload)
+    @put("/me", response=UpdateInfoSchema, auth=AuthBear())
+    def update_info(self, request: AuthenticatedRequest, payload: UpdateInfoSchema):
+        return self.service.update_info(user=request.user, payload=payload)
 
 
 @api(prefix_or_class="shipping-infos", tags=["ShippingInfo"], auth=None)

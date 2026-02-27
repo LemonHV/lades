@@ -121,8 +121,8 @@ class AccountService:
             raise PasswordRequired
         self.orm.save_password(token=token, new_password=new_password)
 
-    def update_info(self, uid: UUID, payload: UpdateInfoSchema):
-        return self.orm.update_info(uid=uid, payload=payload)
+    def update_info(self, user: User, payload: UpdateInfoSchema):
+        return self.orm.update_info(user=user, payload=payload)
 
     def add_shipping_info(self, user: User, payload: ShippingInfoRequestSchema):
         return self.orm.add_shipping_info(user=user, payload=payload)
