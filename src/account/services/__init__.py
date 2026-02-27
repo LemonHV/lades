@@ -4,7 +4,6 @@ from uuid import UUID
 import requests
 
 from account.exceptions import (
-    EmailAlreadyExists,
     EmailOrPasswordInvalid,
     EmailRequired,
     GoogleClientIDNotConfigured,
@@ -28,8 +27,6 @@ class AccountService:
             raise EmailRequired
         if not password:
             raise PasswordRequired
-        if User.objects.filter(email=email, is_active=True).exists():
-            raise EmailAlreadyExists
         self.orm.register(email=email, password=password)
 
     def verify_email_register(self, token: str) -> None:

@@ -9,6 +9,7 @@ from account.exceptions import (
     InvalidOrExpiredToken,
     ShippingInfoNotFound,
     UserNotFound,
+    EmailAlreadyExists,
 )
 from account.models import AuthenticateToken, ShippingInfo, User
 from account.schemas.account import LoginResponseSchema, UpdateInfoSchema
@@ -22,17 +23,24 @@ class AccountORM:
     # =========================================
     @staticmethod
     def register(email: str, password: str) -> None:
-        user = User(email=email, is_active=False)
-        user.set_password(password)
-        user.save()
+        user = User.objects.filter(email=email).first()
+        
+        if user:
+            if user.is_active:
+                raise EmailAlreadyExists
+            else:
+                user.set_password(password)  # update password mới
+                user.save()
+        else:
+            user = User(email=email, is_active=False)
+            user.set_password(password)
+            user.save()
         token_object = get_key(user=user)
-
         backend_url = os.environ.get("BACKEND_URL")
         if not backend_url:
             raise BackendURLNotConfigured
-
+        
         link = f"{backend_url}/api/accounts/verify-email-register/{token_object.token}"
-
         send_verify_email(link=link, email=user.email, verify_type="register")
 
     @staticmethod

@@ -47,37 +47,40 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 
 class AuthenticateToken(models.Model):
+
+    TOKEN_TYPE_CHOICES = (
+        ("register", "Register"),
+        ("reset_password", "Reset Password"),
+        ("login", "Login"),
+    )
+
     user = models.ForeignKey(
-        to=User,
+        User,
         on_delete=models.CASCADE,
         related_name="authenticate_token_fk_user",
         to_field="uid",
-        db_constraint=True,
-        db_index=True,
-        null=False,
-        blank=False,
     )
 
-    token = models.CharField(
-        max_length=255,
-        unique=True,
+    token = models.CharField(max_length=255, unique=True, db_index=True)
+
+    token_type = models.CharField(
+        max_length=50,
+        choices=TOKEN_TYPE_CHOICES,
         db_index=True,
-        null=False,
-        blank=False,
     )
 
-    expires_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField()
     blacklisted_at = models.DateTimeField(null=True, blank=True)
 
-    created_at = models.DateTimeField(auto_now_add=True, auto_now=False)
-    updated_at = models.DateTimeField(auto_now=True, auto_now_add=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     @property
     def is_available(self) -> bool:
-        return not self.blacklisted_at and (
-            self.expires_at is not None and self.expires_at >= now()
+        return (
+            self.blacklisted_at is None
+            and self.expires_at >= now()
         )
-
 
 class ShippingInfo(models.Model):
     id = models.AutoField(primary_key=True)
