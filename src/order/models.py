@@ -8,6 +8,16 @@ from order.utils import OrderStatus, PaymentStatus
 
 class Payment(models.Model):
     uid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    order = models.ForeignKey(
+        to="Order",
+        on_delete=models.CASCADE,
+        related_name="payment_fk_order",
+        to_field="uid",
+        db_constraint=True,
+        db_index=True,
+        null=False,
+        blank=False,
+    )
     code = models.CharField(max_length=255)
     method = models.CharField(max_length=50)
     amount = models.PositiveIntegerField()
@@ -97,13 +107,6 @@ class Order(models.Model):
 
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="order_fk_user"
-    )
-    payment = models.OneToOneField(
-        Payment,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="order_fk_payment",
     )
     discount = models.ForeignKey(
         Discount,

@@ -18,6 +18,7 @@ class OrderRequestSchema(Schema):
 
     shipping_info_id: int
     discount_code: Optional[str] = None
+    payment_method: Literal["banking", "cod"]
     note: Optional[str] = None
 
     @model_validator(mode="after")
@@ -59,22 +60,11 @@ class OrderResponseSchema(ModelSchema):
 
     class Meta:
         model = Order
-        exclude = ["user", "payment", "discount"]
+        exclude = ["user", "discount"]
 
 
 class UpdateOrderStatusSchema(Schema):
     status: OrderStatus
-
-
-class SepayPaymentResponseSchema(Schema):
-    order_code: str
-    amount: int
-    qr_url: str
-    bank_name: str
-    account_no: str
-    account_name: str
-    transfer_content: str
-
 
 class DiscountRequestSchema(Schema):
     name: str

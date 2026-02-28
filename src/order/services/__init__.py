@@ -17,6 +17,9 @@ class OrderService:
     def create_order(self, user: User, payload: OrderRequestSchema):
         return self.orm.create_order(user=user, payload=payload)
 
+    def handle_payment_webhook(self, payload: dict):
+        self.orm.handle_payment_webhook(payload=payload)
+
     def update_order_status(self, uid: UUID, payload: UpdateOrderStatusSchema):
         try:
             order = Order.objects.get(uid=uid)
@@ -52,3 +55,5 @@ class OrderService:
     def update_discount(self, uid: UUID, payload: DiscountRequestSchema):
         discount = self.orm.get_discount_by_uid(uid=uid)
         return self.orm.update_discount(discount=discount, payload=payload)
+    
+

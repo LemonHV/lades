@@ -67,3 +67,13 @@ class DiscountAPI(Controller):
     @put("/{uid}", permissions=[IsAdmin()], response=DiscountResponseSchema)
     def update_discount(self, uid: UUID, payload: DiscountRequestSchema):
         return self.service.update_discount(uid=uid, payload=payload)
+
+@api(prefix_or_class="payments", tags=["Payment"])
+class PaymentAPI(Controller):
+    def __init__(self, service: OrderService):
+        self.service = service
+    
+    @post("/webhook")
+    def handle_payment_webhook(self, payload: dict):
+        self.service.handle_payment_webhook(payload=payload)
+    

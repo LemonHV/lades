@@ -11,7 +11,7 @@ from order.schemas import (
     DiscountRequestSchema,
     UpdateOrderStatusSchema,
 )
-from order.models import Order, OrderItem, Discount
+from order.models import Order, OrderItem, Discount, Payment
 from django.utils.timezone import now
 from django.db import transaction
 from django.db.models import Prefetch
@@ -22,6 +22,9 @@ from order.exceptions import (
     OrderDoesNotExists,
     DiscountDoesNotExists,
 )
+from django.conf import settings
+import requests
+from account.utils import SuccessMessage
 
 
 class OrderORM:
@@ -60,7 +63,7 @@ class OrderORM:
             shipping_fee=15000,
             discount_amount=0,
             total_amount=0,
-            payment_method="cod",
+            payment_method=payload.payment_method,
             note=payload.note,
             name=shipping_info.name,
             phone=shipping_info.phone,
@@ -144,10 +147,80 @@ class OrderORM:
         order.save()
 
         # ================================
-        # 7. SEND CONFIRMATION EMAIL
+        # 7. CREATE PAYMENT
+        # ================================
+
+        payment = Payment.objects.create(
+            order=order,
+            code=generate_code(),
+            method=payload.payment_method,
+            amount=order.total_amount,
+            status="PENDING",
+        )
+
+        # ================================
+        # 8. SEND CONFIRMATION EMAIL
         # ================================
         send_order_confirmation_email(order=order, email=user.email)
-        return order
+
+        if payload.payment_method == "cod":
+            return {
+                "type": "cod",
+                "message": SuccessMessage.CREATE_ORDER_SUCCESS,
+            }
+
+        elif payload.payment_method == "banking":
+            return {
+                "type": "banking",
+                "payment_url": OrderORM.create_sepay_link(payment=payment),
+            }
+
+    @staticmethod
+    def create_sepay_link(payment: Payment):
+        url = "https://api.sepay.vn/payment/create"
+
+        payload = {
+            "merchant_id": settings.SEPAY_MERCHANT_ID,
+            "amount": int(payment.amount),
+            "order_code": payment.code,
+            "return_url": settings.SEPAY_RETURN_URL,
+            "webhook_url": settings.SEPAY_WEBHOOK_URL,
+        }
+
+        headers = {
+            "Authorization": f"Bearer {settings.SEPAY_SECRET_KEY}",
+            "Content-Type": "application/json",
+        }
+
+        response = requests.post(url, json=payload, headers=headers)
+        data = response.json()
+
+        return data["payment_url"]
+
+    @staticmethod
+    def handle_sepay_webhook(payload: dict):
+        payment_code = payload.get("order_code")
+        status = payload.get("status")
+
+        try:
+            payment = Payment.objects.select_related("order").get(code=payment_code)
+        except Payment.DoesNotExist:
+            return {"error": "Payment not found"}
+
+        if status == "success":
+            payment.status = "COMPLETED"
+            payment.save(update_fields=["status"])
+
+            order = payment.order
+            order.status = "CONFIRMED"
+            order.save(update_fields=["status"])
+
+            return {"message": "Payment successful and order confirmed"}
+
+        elif status == "failed":
+            payment.status = "FAILED"
+            payment.save(update_fields=["status"])
+            return {"message": "Payment failed"}
 
     @staticmethod
     def update_order_status(order: Order, payload: UpdateOrderStatusSchema):
