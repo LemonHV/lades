@@ -34,6 +34,7 @@ ALLOWED_HOSTS = [
     "lades.onrender.com",
     "localhost",
     "127.0.0.1",
+    "192.168.100.30"
 ]
 
 CSRF_COOKIE_SECURE = env == "prod"
@@ -96,8 +97,14 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "lades.wsgi.application"
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    },
+}
 
+WSGI_APPLICATION = "lades.wsgi.application"
+ASGI_APPLICATION = "lades.asgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
