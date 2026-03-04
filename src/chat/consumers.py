@@ -4,30 +4,53 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.user = self.scope["user"]
-        self.room_user_uid = self.scope["url_route"]["kwargs"]["user_uid"]
+        user = self.scope.get("user")
 
-        if not self.user.is_authenticated:
+        # 1️⃣ Phải đăng nhập
+        if not user or not user.is_authenticated:
             await self.close()
             return
 
-        if not self.user.is_staff:
-            if str(self.user.uid) != self.room_user_uid:
+        self.user = user
+
+        # 2️⃣ Nếu là staff → được chọn room theo URL
+        if self.user.is_staff:
+            self.room_user_uid = self.scope["url_route"]["kwargs"].get("user_uid")
+            if not self.room_user_uid:
                 await self.close()
                 return
+        else:
+            # 3️⃣ User thường → chỉ được vào phòng của chính mình
+            self.room_user_uid = str(self.user.uid)
 
         self.room_group_name = f"user_{self.room_user_uid}"
 
-        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+        await self.channel_layer.group_add(
+            self.room_group_name,
+            self.channel_name,
+        )
 
         await self.accept()
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+        if hasattr(self, "room_group_name"):
+            await self.channel_layer.group_discard(
+                self.room_group_name,
+                self.channel_name,
+            )
 
     async def receive(self, text_data):
-        data = json.loads(text_data)
-        message = data["message"]
+        if not hasattr(self, "room_group_name"):
+            return
+
+        try:
+            data = json.loads(text_data)
+            message = data.get("message")
+        except Exception:
+            return
+
+        if not message:
+            return
 
         await self.channel_layer.group_send(
             self.room_group_name,
