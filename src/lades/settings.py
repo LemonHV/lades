@@ -28,13 +28,15 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 
 DEBUG = env == "dev"
 
-CSRF_TRUSTED_ORIGINS = ["https://lades.onrender.com"]
+CSRF_TRUSTED_ORIGINS = [
+    "https://www.ladesbrush.com",
+    "https://ladesbrush.com",
+]
 
 ALLOWED_HOSTS = [
-    "lades.onrender.com",
-    "localhost",
-    "127.0.0.1",
-    "192.168.100.30"
+    "www.ladesbrush.com",
+    "ladesbrush.com",
+    "103.90.225.143",
 ]
 
 CSRF_COOKIE_SECURE = env == "prod"
@@ -99,7 +101,10 @@ TEMPLATES = [
 
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
     },
 }
 
