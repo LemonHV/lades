@@ -1,94 +1,78 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.contrib.auth.models import AnonymousUser
+from asgiref.sync import sync_to_async
+
+from chat.services import ChatService
+from account.models import User
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
-    async def connect(self):
-        user = self.scope.get("user")
 
-        if not user or not user.is_authenticated:
+    async def connect(self):
+        self.user = self.scope["user"]
+
+        if not self.user or isinstance(self.user, AnonymousUser):
             await self.close()
             return
 
-        self.user = user
-        self.room_group_name = None
+        self.user_uid = self.scope["url_route"]["kwargs"]["user_uid"]
+        self.room_group_name = f"chat_{self.user_uid}"
 
-        # 👤 User thường → auto join phòng của chính họ
+        # Permission check
         if not self.user.is_staff:
-            self.room_group_name = f"user_{self.user.uid}"
+            if str(self.user.uid) != self.user_uid:
+                await self.close()
+                return
 
-            await self.channel_layer.group_add(
-                self.room_group_name,
-                self.channel_name,
-            )
+        await self.channel_layer.group_add(
+            self.room_group_name,
+            self.channel_name
+        )
 
         await self.accept()
 
     async def disconnect(self, close_code):
-        if self.room_group_name:
-            await self.channel_layer.group_discard(
-                self.room_group_name,
-                self.channel_name,
-            )
+        await self.channel_layer.group_discard(
+            self.room_group_name,
+            self.channel_name
+        )
 
     async def receive(self, text_data):
-        try:
-            data = json.loads(text_data)
-        except Exception:
+        data = json.loads(text_data)
+        content = data.get("content")
+
+        if not content:
             return
 
-        # =========================
-        # 👑 ADMIN JOIN ROOM
-        # =========================
-        if self.user.is_staff and "join_room" in data:
-            room_uid = data["join_room"]
+        service = ChatService()
 
-            new_room = f"user_{room_uid}"
+        # Lấy target_user nếu là admin
+        target_user = None
+        if self.user.is_staff:
+            target_user = await sync_to_async(
+                User.objects.filter(uid=self.user_uid).first
+            )()
 
-            # Nếu đang ở room khác thì rời trước
-            if self.room_group_name:
-                await self.channel_layer.group_discard(
-                    self.room_group_name,
-                    self.channel_name,
-                )
+        message = await sync_to_async(service.send_message)(
+            sender=self.user,
+            content=content,
+            target_user=target_user
+        )
 
-            self.room_group_name = new_room
-
-            await self.channel_layer.group_add(
-                self.room_group_name,
-                self.channel_name,
-            )
-
-            return
-
-        # =========================
-        # 💬 GỬI MESSAGE
-        # =========================
-        message = data.get("message")
-
-        if not message or not self.room_group_name:
-            return
-
+        # Broadcast message
         await self.channel_layer.group_send(
             self.room_group_name,
             {
                 "type": "chat_message",
-                "message": message,
-                "user": self.user.email,
-                "is_staff": self.user.is_staff,
-            },
+                "message": {
+                    "id": message.id,
+                    "content": message.content,
+                    "sender": message.sender.id,
+                    "created_at": str(message.created_at),
+                }
+            }
         )
 
-    # =========================
-    # 📡 BROADCAST HANDLER
-    # =========================
     async def chat_message(self, event):
-        await self.send(
-            text_data=json.dumps(
-                {
-                    "message": event["message"],
-                    "user": event["user"],
-                    "is_staff": event["is_staff"],
-                }
-            )
-        )
+        await self.send(text_data=json.dumps(event["message"]))
