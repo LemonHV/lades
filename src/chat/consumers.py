@@ -106,9 +106,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
             {
                 "type": "chat_message",
                 "message": {
-                    "id": message.id,
+                    "id": str(message.id),
                     "content": message.content,
-                    "sender": message.sender.uid,
+                    "sender": str(message.sender.uid),
                     "created_at": str(message.created_at),
                 }
             }
