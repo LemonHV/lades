@@ -16,7 +16,7 @@ async def get_user_from_token(token):
         decoded = jwt_decode(token, settings.SECRET_KEY, algorithms=["HS256"])
 
         user = await sync_to_async(
-            lambda: User.objects.filter(uid=decoded.get("user_uid")).first()
+            lambda: User.objects.filter(uid=decoded.get("user_id")).first()
         )()
 
         return user
