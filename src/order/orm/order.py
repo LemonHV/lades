@@ -22,7 +22,7 @@ from order.exceptions import (
     OrderDoesNotExists,
     DiscountDoesNotExists,
 )
-from django.conf import settings
+import os
 import requests
 from account.utils import SuccessMessage
 
@@ -180,15 +180,15 @@ class OrderORM:
         url = "https://api.sepay.vn/payment/create"
 
         payload = {
-            "merchant_id": settings.SEPAY_MERCHANT_ID,
+            "merchant_id": os.environ.get("SEPAY_MERCHANT_ID"),
             "amount": int(payment.amount),
             "order_code": payment.code,
-            "return_url": settings.SEPAY_RETURN_URL,
-            "webhook_url": settings.SEPAY_WEBHOOK_URL,
+            "return_url": os.environ.get("SEPAY_RETURN_URL"),
+            "webhook_url": os.environ.get("SEPAY_WEBHOOK_URL"),
         }
 
         headers = {
-            "Authorization": f"Bearer {settings.SEPAY_SECRET_KEY}",
+            "Authorization": f"Bearer {os.environ.get('SEPAY_SECRET_KEY')}",
             "Content-Type": "application/json",
         }
 
