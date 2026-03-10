@@ -177,7 +177,7 @@ class OrderORM:
 
     @staticmethod
     def create_sepay_link(payment: Payment):
-        url = "https://api.sepay.vn/payment/create"
+        url = "https://pgapi-sandbox.sepay.vn/payment/create"
 
         payload = {
             "merchant_id": os.environ.get("SEPAY_MERCHANT_ID"),
