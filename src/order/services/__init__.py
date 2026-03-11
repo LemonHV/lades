@@ -17,8 +17,8 @@ class OrderService:
     def create_order(self, user: User, payload: OrderRequestSchema):
         return self.orm.create_order(user=user, payload=payload)
 
-    def handle_payment_webhook(self, payload: dict):
-        self.orm.handle_payment_webhook(payload=payload)
+    def handle_sepay_webhook(self, payload: dict):
+        self.orm.handle_sepay_webhook(payload=payload)
 
     def update_order_status(self, uid: UUID, payload: UpdateOrderStatusSchema):
         try:

@@ -73,7 +73,7 @@ class PaymentAPI(Controller):
     def __init__(self, service: OrderService):
         self.service = service
     
-    @post("/webhook")
-    def handle_payment_webhook(self, payload: dict):
-        self.service.handle_payment_webhook(payload=payload)
+    @post("/ipn")
+    def handle_sepay_webhook(self, payload: dict):
+        self.service.handle_sepay_webhook(payload=payload)
     
