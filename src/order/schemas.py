@@ -1,5 +1,5 @@
 from ninja import Schema, ModelSchema
-from typing import Literal, Optional, List
+from typing import Literal, Optional, List, Dict, Any
 from uuid import UUID
 from pydantic import model_validator, ConfigDict
 from order.models import Order, OrderItem
@@ -38,11 +38,23 @@ class OrderRequestSchema(Schema):
         return self
 
 
+
+
+class CheckoutSchema(Schema):
+    method: str
+    action_url: str
+    fields: Dict[str, Any]
+
+
 class OrderCreateResponseSchema(Schema):
     uid: UUID
     code: str
     status: str
     total_amount: int
+    type: str
+    message: str
+    payment_code: Optional[str] = None
+    checkout: Optional[CheckoutSchema] = None
 
 
 class OrderItemResponseSchema(ModelSchema):

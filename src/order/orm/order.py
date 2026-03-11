@@ -166,17 +166,24 @@ class OrderORM:
 
         if payload.payment_method == "cod":
             return {
+                "uid": order.uid,
+                "code": order.code,
+                "status": order.status,
+                "total_amount": order.total_amount,
                 "type": "cod",
                 "message": SuccessMessage.CREATE_ORDER_SUCCESS,
-                "order_code": order.code,
                 "payment_code": payment.code,
+                "checkout": None,
             }
 
         elif payload.payment_method == "banking":
             return {
+                "uid": order.uid,
+                "code": order.code,
+                "status": order.status,
+                "total_amount": order.total_amount,
                 "type": "banking",
                 "message": SuccessMessage.CREATE_ORDER_SUCCESS,
-                "order_code": order.code,
                 "payment_code": payment.code,
                 "checkout": OrderORM.build_checkout_response(payment=payment),
             }
