@@ -5,6 +5,7 @@ from order.utils import (
     generate_code,
     generate_order_bill,
     send_order_confirmation_email,
+    generate_signature,
 )
 from order.schemas import (
     OrderRequestSchema,
@@ -167,62 +168,93 @@ class OrderORM:
             return {
                 "type": "cod",
                 "message": SuccessMessage.CREATE_ORDER_SUCCESS,
+                "order_code": order.code,
+                "payment_code": payment.code,
             }
 
         elif payload.payment_method == "banking":
             return {
                 "type": "banking",
-                "payment_url": OrderORM.create_sepay_link(payment=payment),
+                "message": SuccessMessage.CREATE_ORDER_SUCCESS,
+                "order_code": order.code,
+                "payment_code": payment.code,
+                "checkout": OrderORM.build_checkout_response(payment=payment),
             }
+        raise ValueError("Unsupported payment method")
 
     @staticmethod
-    def create_sepay_link(payment: Payment):
+    def build_checkout_payload(payment: Payment) -> dict:
+        merchant_id = os.environ.get("SEPAY_MERCHANT_ID")
+        if not merchant_id:
+            raise ValueError("Missing SEPAY_MERCHANT_ID")
 
-        url = "https://my.sepay.vn/userapi/sacombank/45634/orders"
-
-        payload = {
-            "merchant_id": os.environ.get("SEPAY_MERCHANT_ID"),
-            "amount": int(payment.amount),
-            "order_code": payment.code,
-            "return_url": os.environ.get("SEPAY_RETURN_URL"),
-            "webhook_url": os.environ.get("SEPAY_WEBHOOK_URL"),
+        fields = {
+            "merchant": merchant_id,
+            "operation": "PURCHASE",
+            "payment_method": "BANK_TRANSFER",
+            "order_invoice_number": payment.code,
+            "order_amount": str(int(payment.amount)),
+            "currency": "VND",
+            "order_description": f"Thanh toan don hang {payment.order.code}",
+            "customer_id": str(payment.order.user.uid)
+            if payment.order.user.uid
+            else "",
+            "success_url": os.environ.get("SEPAY_SUCCESS_URL", ""),
+            "error_url": os.environ.get("SEPAY_ERROR_URL", ""),
+            "cancel_url": os.environ.get("SEPAY_CANCEL_URL", ""),
+            "custom_data": payment.code,
         }
 
-        headers = {
-            "Authorization": f"Bearer {os.environ.get('SEPAY_SECRET_KEY')}",
-            "Content-Type": "application/json",
-        }
-
-        response = requests.post(url, json=payload, headers=headers)
-
-        data = response.json()
-
-        return data["payment_url"]
+        fields["signature"] = generate_signature(fields)
+        return fields
 
     @staticmethod
+    def build_checkout_response(payment) -> dict:
+        return {
+            "method": "POST",
+            "action_url": "https://pay.sepay.vn/v1/checkout/init",
+            "fields": OrderORM.build_checkout_payload(payment=payment),
+        }
+
+    @staticmethod
+    @transaction.atomic
     def handle_sepay_webhook(payload: dict):
-        payment_code = payload.get("order_code")
-        status = payload.get("status")
+        payment_code = (
+            payload.get("order_invoice_number")
+            or payload.get("payment_code")
+            or payload.get("custom_data")
+        )
+
+        if not payment_code:
+            return {"error": "Missing payment code"}
 
         try:
             payment = Payment.objects.select_related("order").get(code=payment_code)
         except Payment.DoesNotExist:
             return {"error": "Payment not found"}
 
-        if status == "success":
-            payment.status = "COMPLETED"
-            payment.save(update_fields=["status"])
+        status_value = str(payload.get("status", "")).lower()
+        success_values = {"success", "completed", "paid", "succeeded"}
+
+        if status_value in success_values:
+            if payment.status != "COMPLETED":
+                payment.status = "COMPLETED"
+                payment.save(update_fields=["status"])
 
             order = payment.order
-            order.status = "CONFIRMED"
-            order.save(update_fields=["status"])
+            if order.status != "CONFIRMED":
+                order.status = "CONFIRMED"
+                order.save(update_fields=["status"])
 
             return {"message": "Payment successful and order confirmed"}
 
-        elif status == "failed":
-            payment.status = "FAILED"
-            payment.save(update_fields=["status"])
+        if status_value in {"failed", "error", "cancelled", "canceled"}:
+            if payment.status != "FAILED":
+                payment.status = "FAILED"
+                payment.save(update_fields=["status"])
             return {"message": "Payment failed"}
+
+        return {"message": "Webhook received", "payment_code": payment_code}
 
     @staticmethod
     def update_order_status(order: Order, payload: UpdateOrderStatusSchema):

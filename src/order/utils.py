@@ -16,6 +16,9 @@ from django.utils import timezone
 from django.http import HttpResponse
 from django.db.models import TextChoices
 from django.core.mail import send_mail
+import hmac
+import base64
+import hashlib
 
 
 @unique
@@ -380,3 +383,42 @@ def send_order_confirmation_email(order, email, link=None):
         html_message=html_message,
         fail_silently=False,
     )
+
+FIELD_ORDER = [
+        "merchant",
+        "operation",
+        "payment_method",
+        "order_invoice_number",
+        "order_amount",
+        "currency",
+        "order_description",
+        "customer_id",
+        "success_url",
+        "error_url",
+        "cancel_url",
+        "custom_data",
+    ]
+
+    
+def generate_signature(fields: dict) -> str:
+    secret_key = os.environ.get("SEPAY_SECRET_KEY")
+
+    if not secret_key:
+        raise ValueError("Missing SEPAY_SECRET_KEY")
+
+    sign_parts = []
+
+    for key in FIELD_ORDER:
+        value = fields.get(key)
+        if value not in [None, ""]:
+            sign_parts.append(f"{key}={value}")
+
+    sign_string = ",".join(sign_parts)
+
+    digest = hmac.new(
+        secret_key.encode("utf-8"),
+        sign_string.encode("utf-8"),
+        hashlib.sha256,
+    ).digest()
+
+    return base64.b64encode(digest).decode("utf-8")
