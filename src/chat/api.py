@@ -99,7 +99,8 @@ class ChatAPI(Controller):
     @post("/images", auth=AuthBear(), response=UploadImageResponseSchema)
     def send_image_message(self, request: AuthenticatedRequest):
         image_file = request.FILES.get("file")
-        return self.service.send_image_message(image_file=image_file)
+        image_url = self.service.send_image_message(image_file=image_file)
+        return {"image_url": image_url}
 
 
 @api(prefix_or_class="notifications", tags=["Notification"], auth=AuthBear())
