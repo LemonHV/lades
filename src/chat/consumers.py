@@ -97,7 +97,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self._send_error("Content is required")
             return
 
-        if message_type not in [choice[0] for choice in MessageType]:
+        if message_type not in MessageType.values:
             await self._send_error("Invalid message type")
             return
 
