@@ -417,8 +417,6 @@ def generate_signature(fields: dict) -> str:
 
     sign_string = ",".join(sign_parts)
 
-    print("SIGN STRING:", sign_string)  # debug
-
     digest = hmac.new(
         secret_key.encode(), sign_string.encode(), hashlib.sha256
     ).digest()
