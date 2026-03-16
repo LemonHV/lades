@@ -219,7 +219,7 @@ class OrderORM:
     def build_checkout_response(payment) -> dict:
         return {
             "method": "POST",
-            "action_url": "https://pay.sepay.vn/v1/checkout/init",
+            "action_url": os.environ.get("SEPAY_CHECKOUT_URL", ""),
             "fields": OrderORM.build_checkout_payload(payment=payment),
         }
 
