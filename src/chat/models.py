@@ -1,6 +1,6 @@
 from django.db import models
 from account.models import User
-from utils import MessageType, NotificationType
+from chat.utils import MessageType, NotificationType
 from uuid import uuid4
 
 

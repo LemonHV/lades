@@ -8,7 +8,7 @@ from jwt import decode as jwt_decode
 
 from account.models import User
 from chat.services import ChatService
-from utils import MessageType
+from chat.utils import MessageType
 
 
 async def get_user_from_token(token):
