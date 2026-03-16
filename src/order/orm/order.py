@@ -198,8 +198,7 @@ class OrderORM:
         fields = {
             "merchant": merchant_id,
             "operation": "PURCHASE",
-            "payment_method": "BANK_TRANSFER",
-            "order_invoice_number": payment.code,
+            "order_invoice_number": payment.order.code,
             "order_amount": str(int(payment.amount)),
             "currency": "VND",
             "order_description": f"Thanh toan don hang {payment.order.code}",
@@ -209,7 +208,6 @@ class OrderORM:
             "success_url": os.environ.get("SEPAY_SUCCESS_URL", ""),
             "error_url": os.environ.get("SEPAY_ERROR_URL", ""),
             "cancel_url": os.environ.get("SEPAY_CANCEL_URL", ""),
-            "custom_data": payment.code,
         }
 
         fields["signature"] = generate_signature(fields)
