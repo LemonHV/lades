@@ -1,7 +1,7 @@
 from ninja import ModelSchema, Schema
 from chat.models import Message, Notification, Conversation
 from uuid import UUID
-
+from datetime import datetime
 
 class MessageSchema(ModelSchema):
     sender_uid: str
@@ -53,7 +53,7 @@ class LastMessageSchema(Schema):
     type: str
     content: str
     is_read: bool
-    created_at: str
+    created_at: datetime
 
 
 class ConversationSchema(ModelSchema):
