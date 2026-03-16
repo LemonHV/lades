@@ -400,21 +400,6 @@ FIELD_ORDER = [
 ]
 
 
-FIELD_ORDER = [
-    "merchant",
-    "operation",
-    "payment_method",
-    "order_amount",
-    "currency",
-    "order_invoice_number",
-    "order_description",
-    "customer_id",
-    "success_url",
-    "error_url",
-    "cancel_url",
-]
-
-
 def generate_signature(fields: dict) -> str:
     secret_key = os.environ.get("SEPAY_SECRET_KEY")
 
