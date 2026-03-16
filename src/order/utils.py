@@ -387,12 +387,11 @@ def send_order_confirmation_email(order, email, link=None):
 
 FIELD_ORDER = [
     "merchant",
-    "operation",
-    "payment_method",
-    "order_amount",
     "currency",
-    "order_invoice_number",
+    "order_amount",
+    "operation",
     "order_description",
+    "order_invoice_number",
     "customer_id",
     "success_url",
     "error_url",
