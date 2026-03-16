@@ -43,3 +43,4 @@ class ChatORM:
             .exclude(sender=user)
             .update(is_read=True)
         )
+

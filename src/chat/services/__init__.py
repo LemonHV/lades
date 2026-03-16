@@ -1,7 +1,8 @@
 from chat.orm.chat import ChatORM
+from chat.orm.notification import NotificationORM
 from account.models import User
 from chat.models import Conversation
-from chat.utils import MessageType
+from chat.utils import MessageType, NotificationType
 
 
 class ChatService:
@@ -60,3 +61,27 @@ class ChatService:
             return 0
 
         return self.orm.mark_messages_as_read(conversation, user)
+
+
+class NotificationService:
+    def __init__(self):
+        self.orm = NotificationORM()
+
+    def create_notification(
+        self,
+        user: User,
+        title: str,
+        notification_type: str = NotificationType.NEW_MESSAGE,
+    ):
+        return self.orm.create_notification(
+            user=user, title=title, notification_type=notification_type
+        )
+
+    def get_notifications(self, user: User):
+        return self.orm.get_notifications(user)
+
+    def mark_as_read(self, notification_uid: str, user: User):
+        return self.orm.mark_as_read(notification_uid, user)
+
+    def mark_all_as_read(self, user: User):
+        return self.orm.mark_all_as_read(user)

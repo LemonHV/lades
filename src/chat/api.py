@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 
 from account.models import User
-from chat.schemas import MessageSchema
-from chat.services import ChatService
+from chat.schemas import MessageSchema, NotificationSchema
+from chat.services import ChatService, NotificationService
 from chat.utils import MessageType
 from router.authenticate import AuthBear
 from router.controller import Controller, api, get, post
@@ -16,7 +16,6 @@ class SendMessageBody(BaseModel):
 
 @api(prefix_or_class="chats", tags=["Chat"], auth=AuthBear())
 class ChatAPI(Controller):
-
     def __init__(self, service: ChatService):
         self.service = service
 
@@ -96,3 +95,28 @@ class ChatAPI(Controller):
             "detail": "Marked as read",
             "updated_count": updated_count,
         }
+
+
+@api(prefix_or_class="notifications", tags=["Notification"], auth=AuthBear())
+class NotificationAPI(Controller):
+    def __init__(self, service: NotificationService):
+        self.service = service
+
+    # Lấy danh sách notification
+    @get("/", response=list[NotificationSchema])
+    def get_notifications(self, request: AuthenticatedRequest):
+        return self.service.get_notifications(request.user)
+
+    # Đánh dấu đã đọc
+    @post("/{notification_uid}/read")
+    def mark_as_read(self, request: AuthenticatedRequest, notification_uid: str):
+        updated = self.service.mark_as_read(notification_uid, request.user)
+
+        return {"detail": "Marked as read", "updated": updated}
+
+    # Đánh dấu đọc tất cả
+    @post("/read-all")
+    def mark_all_as_read(self, request: AuthenticatedRequest):
+        updated = self.service.mark_all_as_read(request.user)
+
+        return {"detail": "All notifications marked as read", "updated": updated}

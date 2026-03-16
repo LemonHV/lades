@@ -1,5 +1,5 @@
 from ninja import ModelSchema
-from chat.models import Message
+from chat.models import Message, Notification
 
 
 class MessageSchema(ModelSchema):
@@ -24,3 +24,17 @@ class MessageSchema(ModelSchema):
     @staticmethod
     def resolve_sender_name(obj):
         return obj.sender.name
+    
+
+
+class NotificationSchema(ModelSchema):
+
+    class Meta:
+        model = Notification
+        fields = [
+            "uid",
+            "type",
+            "title",
+            "is_read",
+            "created_at",
+        ]

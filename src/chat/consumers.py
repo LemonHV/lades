@@ -196,3 +196,72 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 }
             )
         )
+
+
+class NotificationConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        query = parse_qs(self.scope["query_string"].decode())
+        token = query.get("token")
+
+        if not token:
+            await self.close(code=4001)
+            return
+
+        self.user = await get_user_from_token(token[0])
+
+        if not self.user:
+            await self.close(code=4002)
+            return
+
+        self.room_group_name = f"noti_{self.user.uid}"
+
+        await self.channel_layer.group_add(
+            self.room_group_name,
+            self.channel_name,
+        )
+
+        await self.accept()
+
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "event": "connected",
+                    "room": self.room_group_name,
+                    "user_uid": str(self.user.uid),
+                }
+            )
+        )
+
+    async def disconnect(self, close_code):
+        if hasattr(self, "room_group_name"):
+            await self.channel_layer.group_discard(
+                self.room_group_name,
+                self.channel_name,
+            )
+
+    async def receive(self, text_data):
+        try:
+            data = json.loads(text_data)
+        except Exception:
+            await self._send_error("Invalid JSON")
+            return
+
+        event = data.get("event")
+
+        if event == "ping":
+            await self.send(text_data=json.dumps({"event": "pong"}))
+        else:
+            await self._send_error("Unsupported event")
+
+    async def notify(self, event):
+        await self.send(text_data=json.dumps(event["payload"]))
+
+    async def _send_error(self, message):
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "event": "error",
+                    "message": message,
+                }
+            )
+        )
