@@ -15,6 +15,7 @@ from account.utils import SuccessMessage
 from order.services import OrderService
 from uuid import UUID
 from typing import List
+from ninja import Body
 
 
 @api(prefix_or_class="orders", tags=["Order"], auth=AuthBear())
@@ -74,6 +75,11 @@ class PaymentAPI(Controller):
         self.service = service
     
     @post("/ipn")
-    def handle_sepay_webhook(self, payload: dict):
+    def handle_sepay_webhook(self, request, payload: dict = Body(...)):
+        print("=== SEPAY IPN HIT ===")
+        print("AUTH:", request.headers.get("Authorization"))
+        print("PAYLOAD:", payload)
+
         self.service.handle_sepay_webhook(payload=payload)
+        return {"success": True}
     
