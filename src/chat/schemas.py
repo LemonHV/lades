@@ -1,5 +1,6 @@
 from ninja import ModelSchema, Schema
 from chat.models import Message, Notification, Conversation
+from uuid import UUID
 
 
 class MessageSchema(ModelSchema):
@@ -41,13 +42,35 @@ class UploadImageResponseSchema(Schema):
     image_url: str
 
 
+class UserResponseSchema(Schema):
+    uid: UUID
+    name: str
+    email: str
+
+
+class LastMessageSchema(Schema):
+    uid: UUID
+    type: str
+    content: str
+    is_read: bool
+    created_at: str
+
+
 class ConversationSchema(ModelSchema):
+    sender: UserResponseSchema
+    last_message: LastMessageSchema | None
+
     class Meta:
         model = Conversation
         fields = [
             "uid",
-            "user",
-            "last_message",
-            "last_message_at",
             "created_at",
         ]
+
+    @staticmethod
+    def resolve_sender(obj):
+        return obj.user
+
+    @staticmethod
+    def resolve_last_message(obj):
+        return obj.last_message

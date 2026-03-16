@@ -13,7 +13,11 @@ class ChatORM:
 
     @staticmethod
     def get_conversations():
-        return Conversation.objects.filter(is_active=True).order_by("-last_message_at")
+        return (
+            Conversation.objects.filter(is_active=True)
+            .select_related("user", "last_message")
+            .order_by("-last_message_at")
+        )
 
     @staticmethod
     def create_message(
