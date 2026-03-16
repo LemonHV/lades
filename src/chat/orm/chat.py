@@ -1,6 +1,8 @@
 from chat.models import Conversation, Message
 from account.models import User
 from chat.utils import MessageType
+from product.utils import upload_file
+import secrets
 
 
 class ChatORM:
@@ -44,3 +46,14 @@ class ChatORM:
             .update(is_read=True)
         )
 
+    @staticmethod
+    def send_image_message(image_file):
+        if not image_file:
+            raise ValueError("Image file is required")
+        image_info = upload_file(
+            file=image_file,
+            folder="chat_images/",
+            public_id=f"chat_{secrets.token_urlsafe(16)}",
+            overwrite=True,
+        )
+        return image_info.get("secure_url")

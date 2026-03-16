@@ -7,6 +7,7 @@ from django.conf import settings
 from jwt import decode as jwt_decode
 
 from account.models import User
+from product.models import Product
 from chat.services import ChatService
 from chat.utils import MessageType
 
@@ -93,13 +94,35 @@ class ChatConsumer(AsyncWebsocketConsumer):
         content = (data.get("content") or "").strip()
         message_type = data.get("type", MessageType.TEXT)
 
-        if not content:
-            await self._send_error("Content is required")
-            return
-
         if message_type not in MessageType.values:
             await self._send_error("Invalid message type")
             return
+
+        if message_type == MessageType.TEXT:
+            if not content:
+                await self._send_error("Content is required")
+                return
+
+        elif message_type == MessageType.IMAGE:
+            if not content:
+                await self._send_error("Image URL is required")
+                return
+
+            if not (content.startswith("http://") or content.startswith("https://")):
+                await self._send_error("Invalid image URL")
+                return
+
+        elif message_type == MessageType.PRODUCT:
+            if not content:
+                await self._send_error("Product uid is required")
+                return
+
+            product_exists = await sync_to_async(
+                lambda: Product.objects.filter(uid=content).exists()
+            )()
+            if not product_exists:
+                await self._send_error("Product not found")
+                return
 
         target_user = None
 
@@ -129,7 +152,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 "uid": str(message.uid),
                 "conversation_uid": str(message.conversation.uid),
                 "sender_uid": str(message.sender.uid),
-                "sender_name": getattr(message.sender, "username", ""),
+                "sender_name": getattr(message.sender.name, "name", ""),
                 "type": message.type,
                 "content": message.content,
                 "is_read": message.is_read,

@@ -62,7 +62,8 @@ class ChatService:
 
         return self.orm.mark_messages_as_read(conversation, user)
 
-
+    def send_image_message(self, image_file):
+        return self.orm.send_image_message(image_file)
 class NotificationService:
     def __init__(self):
         self.orm = NotificationORM()

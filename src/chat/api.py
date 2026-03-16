@@ -96,6 +96,11 @@ class ChatAPI(Controller):
             "updated_count": updated_count,
         }
 
+    @post("/images", auth=AuthBear())
+    def send_image_message(self, request: AuthenticatedRequest):
+        image_file = request.FILES.get("file")
+        return self.service.send_image_message(image_file=image_file)
+
 
 @api(prefix_or_class="notifications", tags=["Notification"], auth=AuthBear())
 class NotificationAPI(Controller):
