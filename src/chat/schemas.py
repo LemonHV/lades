@@ -1,9 +1,8 @@
-from ninja import ModelSchema
+from ninja import ModelSchema, Schema
 from chat.models import Message, Notification
 
 
 class MessageSchema(ModelSchema):
-
     sender_uid: str
     sender_name: str
 
@@ -24,11 +23,9 @@ class MessageSchema(ModelSchema):
     @staticmethod
     def resolve_sender_name(obj):
         return obj.sender.name
-    
 
 
 class NotificationSchema(ModelSchema):
-
     class Meta:
         model = Notification
         fields = [
@@ -38,3 +35,7 @@ class NotificationSchema(ModelSchema):
             "is_read",
             "created_at",
         ]
+
+
+class UploadImageResponseSchema(Schema):
+    image_url: str

@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 from account.models import User
-from chat.schemas import MessageSchema, NotificationSchema
+from chat.schemas import MessageSchema, NotificationSchema, UploadImageResponseSchema
 from chat.services import ChatService, NotificationService
 from chat.utils import MessageType
 from router.authenticate import AuthBear
@@ -96,9 +96,9 @@ class ChatAPI(Controller):
             "updated_count": updated_count,
         }
 
-    @post("/images", auth=AuthBear())
+    @post("/images", auth=AuthBear(), response=UploadImageResponseSchema)
     def send_image_message(self, request: AuthenticatedRequest):
-        image_file = request.FILES.getlist("file")
+        image_file = request.FILES.get("file")
         return self.service.send_image_message(image_file=image_file)
 
 
