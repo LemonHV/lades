@@ -12,8 +12,8 @@ class ChatService:
     def get_or_create_conversation(self, user: User) -> Conversation:
         return self.orm.get_or_create_conversation(user)
 
-    def get_conversation(self, user: User) -> Conversation:
-        return self.orm.get_conversation_by_user(user)
+    def get_conversations(self):
+        return self.orm.get_conversations()
 
     def send_message(
         self,

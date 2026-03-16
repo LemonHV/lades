@@ -12,8 +12,8 @@ class ChatORM:
         return conversation
 
     @staticmethod
-    def get_conversation_by_user(user: User):
-        return Conversation.objects.filter(user=user).first()
+    def get_conversations():
+        return Conversation.objects.filter(is_active=True).order_by("-last_message_at")
 
     @staticmethod
     def create_message(

@@ -1,10 +1,11 @@
 from pydantic import BaseModel
 
 from account.models import User
-from chat.schemas import MessageSchema, NotificationSchema, UploadImageResponseSchema
+from chat.schemas import MessageSchema, NotificationSchema, UploadImageResponseSchema, ConversationSchema
 from chat.services import ChatService, NotificationService
 from chat.utils import MessageType
 from router.authenticate import AuthBear
+from router.authorize import IsAdmin
 from router.controller import Controller, api, get, post
 from router.types import AuthenticatedRequest
 
@@ -46,6 +47,16 @@ class ChatAPI(Controller):
             target_user=target_user,
             message_type=payload.type,
         )
+
+    @get(
+        "/conversations",
+        response=list[ConversationSchema],
+        auth=AuthBear(),
+        permissions=[IsAdmin()],
+    )
+    def get_conversations(self):
+        conversations = self.service.get_conversations()
+        return conversations
 
     @get("/{user_uid}/messages", response=list[MessageSchema])
     def get_messages(
