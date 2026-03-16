@@ -384,22 +384,37 @@ def send_order_confirmation_email(order, email, link=None):
         fail_silently=False,
     )
 
-FIELD_ORDER = [
-        "merchant",
-        "operation",
-        "payment_method",
-        "order_invoice_number",
-        "order_amount",
-        "currency",
-        "order_description",
-        "customer_id",
-        "success_url",
-        "error_url",
-        "cancel_url",
-        "custom_data",
-    ]
 
-    
+FIELD_ORDER = [
+    "merchant",
+    "operation",
+    "payment_method",
+    "order_amount",
+    "currency",
+    "order_invoice_number",
+    "order_description",
+    "customer_id",
+    "success_url",
+    "error_url",
+    "cancel_url",
+]
+
+
+FIELD_ORDER = [
+    "merchant",
+    "operation",
+    "payment_method",
+    "order_amount",
+    "currency",
+    "order_invoice_number",
+    "order_description",
+    "customer_id",
+    "success_url",
+    "error_url",
+    "cancel_url",
+]
+
+
 def generate_signature(fields: dict) -> str:
     secret_key = os.environ.get("SEPAY_SECRET_KEY")
 
@@ -410,15 +425,18 @@ def generate_signature(fields: dict) -> str:
 
     for key in FIELD_ORDER:
         value = fields.get(key)
-        if value not in [None, ""]:
-            sign_parts.append(f"{key}={value}")
+
+        if value is None:
+            continue
+
+        sign_parts.append(f"{key}={value}")
 
     sign_string = ",".join(sign_parts)
 
+    print("SIGN STRING:", sign_string)  # debug
+
     digest = hmac.new(
-        secret_key.encode("utf-8"),
-        sign_string.encode("utf-8"),
-        hashlib.sha256,
+        secret_key.encode(), sign_string.encode(), hashlib.sha256
     ).digest()
 
-    return base64.b64encode(digest).decode("utf-8")
+    return base64.b64encode(digest).decode()
