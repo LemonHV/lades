@@ -1,10 +1,8 @@
 import logging
 import time
-from datetime import datetime
 
-from django.db import connection
 from django.http import JsonResponse
-
+from django.utils import timezone
 
 LOGGER = logging.getLogger("django")
 
@@ -17,34 +15,50 @@ class APIMiddleware:
         if not request.path.startswith("/api"):
             return self.get_response(request)
 
-        started_time = time.time()
-        started_connection_queries = len(connection.queries)
+        started_time = time.perf_counter()
 
-        response = self.get_response(request)
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            ip_address = x_forwarded_for.split(",")[0].strip()
+        else:
+            ip_address = request.META.get("REMOTE_ADDR")
 
-        ended_time = time.time()
-        ended_connection_queries = len(connection.queries)
+        try:
+            response = self.get_response(request)
+        except Exception:
+            LOGGER.exception(
+                "---------------------------------------------------------------\n"
+                f"> Method: {request.method}\n"
+                f"> Path: {request.path}\n"
+                f"> IP Address: {ip_address}\n"
+                f"> Authenticator: {getattr(request, 'user', None)}\n"
+                "---------------------------------------------------------------"
+            )
+            raise
 
-        # LOG IP ADDRESS
+        ended_time = time.perf_counter()
+
         LOGGER.info(
             "---------------------------------------------------------------\n"
-            f"> Response: {response.status_code} {response.reason_phrase}\n"
-            f"> IP Address: {request.META.get('REMOTE_ADDR')}\n"
-            f"> Authenticator: {request.user}\n"
-            f"> Running time: {ended_time - started_time}\n"
-            f"> Number of queries: {ended_connection_queries - started_connection_queries}\n"
+            f"> Method: {request.method}\n"
+            f"> Path: {request.path}\n"
+            f"> Response: {response.status_code}\n"
+            f"> IP Address: {ip_address}\n"
+            f"> Authenticator: {getattr(request, 'user', None)}\n"
+            f"> Running time: {ended_time - started_time:.4f}s\n"
             "---------------------------------------------------------------"
         )
 
-        if response.status_code == 404 and response.reason_phrase == "Not Found":
+        if response.status_code == 404:
             return JsonResponse(
                 {
                     "data": None,
-                    "error_code": response.status_code,
+                    "error_code": 404,
                     "message_code": "PAGE_NOT_FOUND",
                     "message": "Page not found",
-                    "current_time": datetime.now(),
-                }
+                    "current_time": timezone.now(),
+                },
+                status=404,
             )
 
         return response
