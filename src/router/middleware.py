@@ -5,6 +5,7 @@ from django.db import connection
 from django.http import JsonResponse
 from django.utils import timezone
 
+
 LOGGER = logging.getLogger("django")
 
 
@@ -29,24 +30,52 @@ class QueryCounter:
         return execute(sql, params, many, context)
 
 
+def error_response(
+    *,
+    error_code,
+    message_code,
+    message,
+    status,
+    data=None,
+):
+    return JsonResponse(
+        {
+            "data": data,
+            "error_code": error_code,
+            "message_code": message_code,
+            "message": message,
+            "current_time": timezone.now().isoformat(),  # fix serialize
+        },
+        status=status,
+    )
+
+
 class APIMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
+        # chỉ apply cho API
         if not request.path.startswith("/api"):
             return self.get_response(request)
 
-        start = time.perf_counter()
+        start_time = time.perf_counter()
         client_ip = get_client_ip(request)
         counter = QueryCounter()
 
         try:
             with connection.execute_wrapper(counter):
                 response = self.get_response(request)
+
         except Exception:
             LOGGER.exception(
-                "API Exception | method=%s path=%s ip=%s user=%s",
+                "\n"
+                "❌ API EXCEPTION\n"
+                "Method : %s\n"
+                "Path   : %s\n"
+                "IP     : %s\n"
+                "User   : %s\n"
+                "----------------------------------------",
                 request.method,
                 request.path,
                 client_ip,
@@ -54,10 +83,21 @@ class APIMiddleware:
             )
             raise
 
-        duration = time.perf_counter() - start
+        duration = time.perf_counter() - start_time
 
+        # log đẹp nhiều dòng
         LOGGER.info(
-            "API Request | method=%s path=%s status=%s ip=%s user=%s duration=%.4fs queries=%s",
+            "\n"
+            "🚀 API REQUEST\n"
+            "----------------------------------------\n"
+            "Method     : %s\n"
+            "Path       : %s\n"
+            "Status     : %s\n"
+            "IP         : %s\n"
+            "User       : %s\n"
+            "Duration   : %.4fs\n"
+            "Queries    : %s\n"
+            "----------------------------------------",
             request.method,
             request.path,
             response.status_code,
@@ -67,15 +107,12 @@ class APIMiddleware:
             counter.count,
         )
 
+        # format error chuẩn
         if response.status_code == 404:
-            return JsonResponse(
-                {
-                    "data": None,
-                    "error_code": 404,
-                    "message_code": "PAGE_NOT_FOUND",
-                    "message": "Page not found",
-                    "current_time": timezone.now(),
-                },
+            return error_response(
+                error_code=404,
+                message_code="PAGE_NOT_FOUND",
+                message="Page not found",
                 status=404,
             )
 
