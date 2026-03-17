@@ -110,3 +110,18 @@ class VerifyCodeSchema(Schema):
     qr_url: str
     max_scan: int
     scan_count: int
+
+
+class VerifierLocationSchema(Schema):
+    verify_code_uid: UUID
+    ip_addess: str
+    ips: str = None
+    country: str = None
+    country_code: str = None
+    region: str = None
+    region_name: str = None
+    city: str = None
+    zip_code: str = None
+    latitude: str = None
+    longitude: str = None
+    timezone: str = None

@@ -39,6 +39,10 @@ class ChatORM:
         return message
 
     @staticmethod
+    def get_conversation_by_user(user: User):
+        return Conversation.objects.filter(user=user, is_active=True).first()
+
+    @staticmethod
     def get_messages(conversation: Conversation):
         return conversation.message_fk_conversation.all().order_by("created_at")
 

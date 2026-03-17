@@ -22,6 +22,7 @@ from router.authorize import IsAdmin
 from router.controller import Controller, api, delete, get, post, put
 from router.paginate import paginate
 from router.types import AuthenticatedRequest
+from router.middleware import get_client_ip
 
 
 @api(prefix_or_class="products", tags=["Product"], auth=None)
@@ -108,8 +109,9 @@ class VerifyCodeController(Controller):
         self.service = service
 
     @get("/verify-qrcode")
-    def verify_qrcode(self, code: str):
-        result = self.service.verify_qrcode(code=code)
+    def verify_qrcode(self, request, code: str):
+        client_ip = get_client_ip(request)
+        result = self.service.verify_qrcode(code=code, client_ip=client_ip)
 
         html = Template(VERIFY_QR_TEMPLATE).render(Context(result))
         return HttpResponse(html, content_type="text/html")

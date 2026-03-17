@@ -111,3 +111,40 @@ class Review(models.Model):
 
     class Meta:
         unique_together = ("product", "user")
+
+
+class VerifierLocation(models.Model):
+    uid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+
+    verify_code = models.ForeignKey(
+        to=VerifyCode,
+        on_delete=models.CASCADE,
+        related_name="location_fk_verifycode",
+        to_field="uid",
+        db_index=True,
+    )
+
+    # 🌍 IP + network
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    isp = models.CharField(max_length=255, null=True, blank=True)
+
+    # 📍 Location
+    country = models.CharField(max_length=100, null=True, blank=True)
+    country_code = models.CharField(max_length=10, null=True, blank=True)
+
+    region = models.CharField(max_length=100, null=True, blank=True)
+    region_name = models.CharField(max_length=100, null=True, blank=True)
+
+    city = models.CharField(max_length=100, null=True, blank=True)
+    zip_code = models.CharField(max_length=20, null=True, blank=True)
+
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+
+    timezone = models.CharField(max_length=100, null=True, blank=True)
+
+    # ⏱ thời gian
+    scanned_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.ip_address} - {self.city} ({self.verify_code.code})"

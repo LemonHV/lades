@@ -4,13 +4,25 @@ from django.db import transaction
 from django.db.models import Prefetch, Q
 from django.http import HttpResponse
 
-from product.models import Brand, Product, ProductImage, Review, VerifyCode
-from product.schemas import ProductRequestSchema, SearchFilterSortSchema
+from product.models import (
+    Brand,
+    Product,
+    ProductImage,
+    Review,
+    VerifyCode,
+    VerifierLocation,
+)
+from product.schemas import (
+    ProductRequestSchema,
+    SearchFilterSortSchema,
+    VerifierLocationSchema,
+)
 from product.utils import (
     build_product_workbook,
     generate_qrcode,
     load_product_information,
     upload_file,
+    get_ip_location,
 )
 
 
@@ -257,8 +269,20 @@ class ProductORM:
         }
 
     @staticmethod
+    def add_verifier_location(payload: VerifierLocationSchema):
+        try:
+            verify_code = VerifyCode.objects.get(uid=payload.verify_code_uid)
+        except VerifyCode.DoesNotExist:
+            return None
+        verifier_location = VerifierLocation(
+            **payload.dict(exclude={"verify_code_uid"}), verify_code=verify_code
+        )
+        verifier_location.save()
+        return verifier_location
+
+    @staticmethod
     @transaction.atomic
-    def verify_qrcode(code: str):
+    def verify_qrcode(code: str, client_ip: str):
         try:
             verify_code = (
                 VerifyCode.objects.select_for_update()
@@ -272,6 +296,13 @@ class ProductORM:
                 "product": None,
                 "scan_count": 0,
             }
+        location_data = get_ip_location(client_ip)
+        payload = {
+            "verify_code_uid": verify_code.uid,
+            **(location_data or {}),
+        }
+
+        ProductORM.add_verifier_location(payload=payload)
 
         if verify_code.scan_count >= verify_code.max_scan:
             return {

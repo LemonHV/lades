@@ -3,7 +3,7 @@ from uuid import UUID
 from product.exceptions import ProductDoesNotExists, ProductFileRequired
 from product.models import Product
 from product.orm.product import ProductORM
-from product.schemas import ProductRequestSchema, SearchFilterSortSchema
+from product.schemas import ProductRequestSchema, SearchFilterSortSchema, VerifierLocationSchema
 
 
 class ProductService:
@@ -58,5 +58,5 @@ class ProductService:
             product=product, number_qrcode=number_qrcode
         )
 
-    def verify_qrcode(self, code: str):
-        return self.orm.verify_qrcode(code=code)
+    def verify_qrcode(self, code: str, client_ip: str):
+        return self.orm.verify_qrcode(code=code, client_ip=client_ip)

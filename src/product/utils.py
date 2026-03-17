@@ -380,3 +380,34 @@ VERIFY_QR_TEMPLATE = """
 </body>
 </html>
 """
+
+def get_ip_location(ip: str):
+    try:
+        res = requests.get(
+            f"http://ip-api.com/json/{ip}",
+            timeout=2,
+        )
+        res.raise_for_status()
+        data = res.json()
+
+        if data.get("status") == "success":
+            return {
+                "ip_address": ip,
+                "isp": data.get("isp"),
+                "organization": data.get("org"),
+                "asn": data.get("as"),
+                "country": data.get("country"),
+                "country_code": data.get("countryCode"),
+                "region": data.get("region"),
+                "region_name": data.get("regionName"),
+                "city": data.get("city"),
+                "zip_code": data.get("zip"),
+                "latitude": data.get("lat"),
+                "longitude": data.get("lon"),
+                "timezone": data.get("timezone"),
+            }
+
+    except Exception:
+        pass
+
+    return None
