@@ -77,7 +77,7 @@ class PaymentORM:
         return payment, order
 
     @staticmethod
-    def confirm_payment_success(self, uid: UUID, user):
+    def confirm_payment_success(uid: UUID, user):
         try:
             payment = Payment.objects.select_related("order").get(uid=uid)
         except Payment.DoesNotExist:

@@ -87,5 +87,5 @@ class PaymentAPI(Controller):
         permissions=[IsUser()],
         response=ConfirmResponseSchema,
     )
-    def confirm_payment_success(self, uid: UUID):
-        return self.service.confirm_payment_success(uid=uid)
+    def confirm_payment_success(self, request: AuthenticatedRequest, uid: UUID):
+        return self.service.confirm_payment_success(uid=uid, user=request.user)

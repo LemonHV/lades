@@ -157,5 +157,5 @@ class PaymentService:
             "message": "Payment confirmed successfully",
         }
 
-    def confirm_payment_success(self, uid: UUID):
-        return self.orm.confirm_payment_success(uid=uid)
+    def confirm_payment_success(self, uid: UUID, user):
+        return self.orm.confirm_payment_success(uid=uid, user=user)
