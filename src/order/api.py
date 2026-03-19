@@ -73,8 +73,8 @@ class DiscountAPI(Controller):
 
 @api(prefix_or_class="payments", tags=["Payment"], auth=None)
 class PaymentAPI(Controller):
-    def __init__(self, service: PaymentService):
-        self.service = service
+    def __init__(self):
+        self.service = PaymentService()
 
     @post("/webhook", auth=None, response=WebhookResponseSchema)
     def sepay_webhook(self, request, payload: SePayWebhookSchema):

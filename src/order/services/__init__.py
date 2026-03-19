@@ -63,8 +63,8 @@ class OrderService:
 
 
 class PaymentService:
-    def __init__(self, orm: PaymentORM):
-        self.orm = orm
+    def __init__(self):
+        self.orm = PaymentORM()
 
     @staticmethod
     def _normalize_text(text: str | None) -> str:
