@@ -41,6 +41,7 @@ ALLOWED_HOSTS = [
     "www.api.ladesbrush.com",
     "api.ladesbrush.com",
     "103.90.225.143",
+    "localhost"
 ]
 
 CSRF_COOKIE_SECURE = env == "prod"

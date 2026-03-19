@@ -4,42 +4,41 @@ from uuid import UUID
 from ninja import Schema
 
 
-# Message
 class MessageResponseSchema(Schema):
     message: str
 
 
-# Login
-class CredentialSchema(Schema):
+class TokenResponseSchema(Schema):
+    token: str
+
+
+class LoginSchema(Schema):
     email: str
     password: str
 
 
-class LoginResponseSchema(Schema):
-    is_staff: bool
-    token: str
-
-
-class LoginGoogleSchema(Schema):
+class GoogleLoginSchema(Schema):
     id_token: str
 
 
-# Change/Reset Password
+class LoginResponseSchema(TokenResponseSchema):
+    is_staff: bool
+
+
 class ChangePasswordSchema(Schema):
     old_password: str
     new_password: str
 
 
-class ResetPasswordSchema(Schema):
+class ForgotPasswordSchema(Schema):
     email: str
 
 
-class SavePasswordSchema(Schema):
+class ResetPasswordConfirmSchema(Schema):
     token: str
     new_password: str
 
 
-# User Info
 class UserInfoSchema(Schema):
     uid: UUID
     name: Optional[str] = None
@@ -47,5 +46,5 @@ class UserInfoSchema(Schema):
     is_staff: bool
 
 
-class UpdateInfoSchema(Schema):
+class UpdateUserInfoSchema(Schema):
     name: str

@@ -51,10 +51,16 @@ class UserNotActive(APIException):
     message = "Tài khoản chưa được xác thực email"
 
 
-class EmailOrPasswordInvalid(APIException):
+class EmailInvalid(APIException):
     error_code = HTTPStatus.FORBIDDEN
-    message_code = "INVALID_EMAIL_OR_PASSWORD"
-    message = "Email hoặc mật khẩu không hợp lệ"
+    message_code = "INVALID_EMAIL"
+    message = "Email không hợp lệ"
+
+
+class PasswordInvalid(APIException):
+    error_code = HTTPStatus.FORBIDDEN
+    message_code = "INVALID_PASSWORD"
+    message = "Mật khẩu không hợp lệ"
 
 
 class GoogleClientIDNotConfigured(APIException):

@@ -29,6 +29,7 @@ def generate_key(user: User, key_type: str) -> AuthenticateToken:
     token_object = AuthenticateToken(
         user=user,
         token=str(token),
+        key_type=key_type,
         expires_at=expires_at,
     )
     token_object.save()
@@ -151,6 +152,6 @@ class SuccessMessage:
     CART_ITEM_UPDATED = "Cập nhật sản phẩm trong xóa hàng thành công"
     CART_ITEM_DELETED = "Xóa sản phẩm khỏi giỏ hàng thành công"
     DEFAULT_SHIPPING_INFO_SET = "Đặt thông tin giao hàng mặc định thành công"
-    
+
     UPDATE_ORDER_STATUS_SUCCESS = "Cập nhật trạng thái đơn hàng thành công"
     CREATE_ORDER_SUCCESS = "Đặt hàng thành công"

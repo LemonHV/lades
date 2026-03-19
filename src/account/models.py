@@ -1,7 +1,11 @@
 from typing import cast
 from uuid import uuid4
 
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    BaseUserManager,
+    PermissionsMixin,
+)
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
@@ -86,9 +90,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         self.name = (self.name or "").strip()
 
         if self.name and len(self.name) < 2:
-            raise ValidationError({
-                "name": "Name must be at least 2 characters long."
-            })
+            raise ValidationError({"name": "Name must be at least 2 characters long."})
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -107,6 +109,7 @@ class AuthenticateToken(models.Model):
         db_index=True,
     )
     token = models.CharField(max_length=255, unique=True, db_index=True)
+    key_type = models.CharField(max_length=50, db_index=True)
     expires_at = models.DateTimeField(db_index=True)
     blacklisted_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
@@ -133,15 +136,19 @@ class AuthenticateToken(models.Model):
         if not self.token:
             raise ValidationError({"token": "Token is required."})
 
-        if self.blacklisted_at and self.created_at and self.blacklisted_at < self.created_at:
-            raise ValidationError({
-                "blacklisted_at": "blacklisted_at cannot be earlier than created_at."
-            })
+        if (
+            self.blacklisted_at
+            and self.created_at
+            and self.blacklisted_at < self.created_at
+        ):
+            raise ValidationError(
+                {"blacklisted_at": "blacklisted_at cannot be earlier than created_at."}
+            )
 
         if self.expires_at and self.created_at and self.expires_at < self.created_at:
-            raise ValidationError({
-                "expires_at": "expires_at cannot be earlier than created_at."
-            })
+            raise ValidationError(
+                {"expires_at": "expires_at cannot be earlier than created_at."}
+            )
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -218,11 +225,7 @@ class ShippingInfo(models.Model):
         if not self.phone:
             raise ValidationError({"phone": "Phone is required."})
 
-        normalized_phone = (
-            self.phone.replace(" ", "")
-            .replace(".", "")
-            .replace("-", "")
-        )
+        normalized_phone = self.phone.replace(" ", "").replace(".", "").replace("-", "")
 
         if not normalized_phone.isdigit():
             raise ValidationError({"phone": "Phone must contain digits only."})
