@@ -9,13 +9,14 @@ from order.schemas import (
     DiscountRequestSchema,
     DiscountResponseSchema,
     UpdateOrderStatusSchema,
+    SePayWebhookSchema,
+    WebhookResponseSchema,
 )
 from account.schemas.account import MessageResponseSchema
 from utils.success_message import SuccessMessage
-from order.services import OrderService
+from order.services import OrderService, PaymentService
 from uuid import UUID
 from typing import List
-from ninja import Body
 
 
 @api(prefix_or_class="orders", tags=["Order"], auth=AuthBear())
@@ -72,14 +73,9 @@ class DiscountAPI(Controller):
 
 @api(prefix_or_class="payments", tags=["Payment"], auth=None)
 class PaymentAPI(Controller):
-    def __init__(self, service: OrderService):
+    def __init__(self, service: PaymentService):
         self.service = service
 
-    @post("/ipn")
-    def handle_sepay_webhook(self, request, payload: dict = Body(...)):
-        print("=== SEPAY IPN HIT ===")
-        print("AUTH:", request.headers.get("Authorization"))
-        print("PAYLOAD:", payload)
-
-        self.service.handle_sepay_webhook(payload=payload)
-        return {"success": True}
+    @post("/webhook", auth=None, response=WebhookResponseSchema)
+    def sepay_webhook(self, request, payload: SePayWebhookSchema):
+        return self.service.handle_sepay_webhook(payload)

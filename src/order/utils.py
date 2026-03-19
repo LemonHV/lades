@@ -34,7 +34,6 @@ class PaymentStatus(TextChoices):
     SUCCESS = "SUCCESS", "Success"
     FAILED = "FAILED", "Failed"
     CANCELLED = "CANCELLED", "Cancelled"
-    UNPAID = "UNPAID", "Unpaid"
 
 
 def generate_code(length=20):

@@ -96,3 +96,23 @@ class DiscountResponseSchema(Schema):
     end_time: Optional[str] = None
     min_order_amount: Optional[int] = None
     max_usage: Optional[int] = None
+
+
+class SePayWebhookSchema(Schema):
+    id: int
+    gateway: str
+    transactionDate: str
+    accountNumber: str
+    code: Optional[str] = None
+    content: str
+    transferType: str
+    transferAmount: int
+    accumulated: int
+    subAccount: Optional[str] = None
+    referenceCode: str
+    description: Optional[str] = ""
+
+
+class WebhookResponseSchema(Schema):
+    success: bool
+    message: str

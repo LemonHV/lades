@@ -9,24 +9,25 @@ from order.utils import OrderStatus, PaymentStatus
 class Payment(models.Model):
     uid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     order = models.OneToOneField(
-        to="Order",
+        "Order",
         on_delete=models.CASCADE,
         related_name="payment",
         to_field="uid",
-        db_constraint=True,
-        db_index=True,
-        null=False,
-        blank=False,
     )
     method = models.CharField(max_length=50)
     amount = models.PositiveIntegerField()
     status = models.CharField(
         max_length=20, choices=PaymentStatus, default=PaymentStatus.PENDING
     )
-    transfer_content = models.CharField(max_length=255, blank=True, default="")
+    transfer_content = models.CharField(max_length=255, null=True, blank=True)
     qr_url = models.TextField(blank=True, default="")
+    sepay_transaction_id = models.BigIntegerField(null=True, blank=True, unique=True)
+    sepay_reference_code = models.CharField(max_length=100, null=True, blank=True)
     paid_at = models.DateTimeField(null=True, blank=True)
+    raw_payload = models.JSONField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.order.code} - {self.amount}"
@@ -104,9 +105,7 @@ class Order(models.Model):
     phone = models.CharField(max_length=20)
     address = models.CharField(max_length=255)
 
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="order"
-    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="order")
     discount = models.ForeignKey(
         Discount,
         on_delete=models.SET_NULL,
