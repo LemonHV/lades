@@ -55,7 +55,7 @@ class OrderORM:
         # ================================
         try:
             shipping_info = ShippingInfo.objects.get(
-                id=payload.shipping_info_id,
+                uid=payload.shipping_info_uid,
                 user=user,
             )
         except ShippingInfo.DoesNotExist:

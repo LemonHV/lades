@@ -17,7 +17,7 @@ class OrderRequestSchema(Schema):
     order_items: Optional[list[BuyNowItemSchema]] = None
     cart_item_uids: Optional[list[UUID]] = None
 
-    shipping_info_id: int
+    shipping_info_uid: UUID
     discount_code: Optional[str] = None
     payment_method: Literal["banking", "cod"]
     note: Optional[str] = None
