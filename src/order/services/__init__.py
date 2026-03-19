@@ -15,15 +15,13 @@ from django.utils import timezone
 from order.utils import OrderStatus, PaymentStatus
 import re
 
+
 class OrderService:
     def __init__(self):
         self.orm = OrderORM()
 
     def create_order(self, user: User, payload: OrderRequestSchema):
         return self.orm.create_order(user=user, payload=payload)
-
-    def handle_sepay_webhook(self, payload: dict):
-        self.orm.handle_sepay_webhook(payload=payload)
 
     def update_order_status(self, uid: UUID, payload: UpdateOrderStatusSchema):
         try:
@@ -67,40 +65,27 @@ class PaymentService:
         self.orm = PaymentORM()
 
     @staticmethod
-    def _get_payload_value(payload, key: str, default=None):
-        if isinstance(payload, dict):
-            return payload.get(key, default)
-        return getattr(payload, key, default)
-
-    @staticmethod
-    def _payload_to_dict(payload) -> dict:
-        if isinstance(payload, dict):
-            return payload
-        if hasattr(payload, "model_dump"):
-            return payload.model_dump()
-        if hasattr(payload, "dict"):
-            return payload.dict()
-        return {}
-
-    @staticmethod
     def _normalize_text(text: str | None) -> str:
         if not text:
             return ""
         return " ".join(text.strip().upper().split())
 
     @staticmethod
-    def _extract_order_code(content: str) -> str | None:
-        normalized = PaymentService._normalize_text(content)
-        if not normalized:
+    def _extract_order_code(payload) -> str | None:
+        prefix_code = str(getattr(payload, "code", "") or "").strip().upper()
+        content = str(getattr(payload, "content", "") or "").strip().upper()
+
+        if not content:
             return None
 
-        # Ví dụ bắt ORDER001, DH001, ABC123...
-        match = re.search(r"\b[A-Z]{1,10}\d{2,20}\b", normalized)
-        if match:
-            return match.group(0)
+        # Nếu content bắt đầu bằng prefix cố định của SePay
+        # thì phần phía sau mới là mã đơn thật
+        if prefix_code and content.startswith(prefix_code):
+            real_order_code = content[len(prefix_code) :].strip()
+            return real_order_code or None
 
-        parts = normalized.split()
-        return parts[-1] if parts else None
+        # fallback nếu không có prefix
+        return content
 
     @staticmethod
     def _parse_transaction_datetime(value: str | None):
@@ -122,26 +107,29 @@ class PaymentService:
 
         return timezone.now()
 
+    @staticmethod
+    def _payload_to_dict(payload):
+        if hasattr(payload, "model_dump"):
+            return payload.model_dump()
+        if hasattr(payload, "dict"):
+            return payload.dict()
+        return dict(payload)
+
     def handle_sepay_webhook(self, payload):
         raw_payload = self._payload_to_dict(payload)
 
-        transfer_type = str(
-            self._get_payload_value(payload, "transferType", "")
-        ).lower()
-        transaction_id = self._get_payload_value(payload, "id")
-        content = self._get_payload_value(payload, "content", "")
-        transfer_amount = self._get_payload_value(payload, "transferAmount", 0)
-        transaction_date = self._get_payload_value(payload, "transactionDate")
-        reference_code = self._get_payload_value(payload, "referenceCode")
+        transfer_type = str(getattr(payload, "transferType", "") or "").lower()
+        transaction_id = getattr(payload, "id", None)
+        transfer_amount = getattr(payload, "transferAmount", 0)
+        transaction_date = getattr(payload, "transactionDate", None)
+        reference_code = getattr(payload, "referenceCode", None)
 
-        # 1. Chỉ xử lý tiền vào
         if transfer_type != "in":
             return {
                 "success": True,
-                "message": "Ignored non-incoming transaction",
+                "message": "Ignore outgoing transaction",
             }
 
-        # 2. Chống duplicate theo transaction id
         existed_payment = self.orm.get_payment_by_sepay_transaction_id(transaction_id)
         if existed_payment:
             return {
@@ -149,57 +137,41 @@ class PaymentService:
                 "message": "Transaction already processed",
             }
 
-        # 3. Tách mã đơn
-        order_code = self._extract_order_code(content)
+        order_code = self._extract_order_code(payload)
         if not order_code:
             return {
                 "success": True,
-                "message": "Cannot extract order code, ignored",
+                "message": "Cannot extract order code",
             }
 
-        # 4. Tìm order theo code
         order = self.orm.get_order_by_code(order_code)
         if not order:
             return {
                 "success": True,
-                "message": f"Order {order_code} not found, ignored",
+                "message": f"Order {order_code} not found",
             }
 
-        # 5. Tìm payment
         payment = self.orm.get_payment_by_order(order)
         if not payment:
             return {
                 "success": True,
-                "message": f"Payment for order {order_code} not found, ignored",
+                "message": f"Payment for order {order_code} not found",
             }
 
-        # 6. Nếu đã success rồi thì bỏ qua, không trả lỗi
-        if (
-            payment.status == PaymentStatus.SUCCESS
-            or order.status == OrderStatus.PROCESSING
-        ):
+        if payment.status == PaymentStatus.SUCCESS:
             return {
                 "success": True,
-                "message": "Payment already processed",
+                "message": "Payment already paid",
             }
 
-        # 7. Đối chiếu số tiền
-        try:
-            if int(payment.amount) != int(transfer_amount):
-                return {
-                    "success": False,
-                    "message": "Amount mismatch",
-                }
-        except Exception:
+        if int(payment.amount) != int(transfer_amount):
             return {
                 "success": False,
-                "message": "Invalid amount",
+                "message": f"Amount mismatch: db={payment.amount}, webhook={transfer_amount}",
             }
 
-        # 8. Parse thời gian
         paid_at = self._parse_transaction_datetime(transaction_date)
 
-        # 9. Update payment + order
         self.orm.mark_payment_and_order_paid(
             payment=payment,
             order=order,
