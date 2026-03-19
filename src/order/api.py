@@ -79,6 +79,13 @@ class PaymentAPI(Controller):
 
     @post("/webhook", auth=None, response=WebhookResponseSchema)
     def sepay_webhook(self, request, payload: SePayWebhookSchema):
+        print("=== SePay webhook payload ===")
+        if hasattr(payload, "model_dump"):
+            print(payload.model_dump())
+        elif hasattr(payload, "dict"):
+            print(payload.dict())
+        else:
+            print(payload)
         return self.service.handle_sepay_webhook(payload)
 
     @get(

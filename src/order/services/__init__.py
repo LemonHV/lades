@@ -12,8 +12,8 @@ from uuid import UUID
 from datetime import datetime
 
 from django.utils import timezone
-from ninja.errors import HttpError
-
+from order.utils import OrderStatus, PaymentStatus
+import re
 
 class OrderService:
     def __init__(self):
@@ -67,6 +67,22 @@ class PaymentService:
         self.orm = PaymentORM()
 
     @staticmethod
+    def _get_payload_value(payload, key: str, default=None):
+        if isinstance(payload, dict):
+            return payload.get(key, default)
+        return getattr(payload, key, default)
+
+    @staticmethod
+    def _payload_to_dict(payload) -> dict:
+        if isinstance(payload, dict):
+            return payload
+        if hasattr(payload, "model_dump"):
+            return payload.model_dump()
+        if hasattr(payload, "dict"):
+            return payload.dict()
+        return {}
+
+    @staticmethod
     def _normalize_text(text: str | None) -> str:
         if not text:
             return ""
@@ -78,12 +94,12 @@ class PaymentService:
         if not normalized:
             return None
 
-        prefix = "DH102969 "
-        if normalized.startswith(prefix):
-            code = normalized[len(prefix) :].strip()
-            return code or None
+        # Ví dụ bắt ORDER001, DH001, ABC123...
+        match = re.search(r"\b[A-Z]{1,10}\d{2,20}\b", normalized)
+        if match:
+            return match.group(0)
 
-        parts = normalized.split(" ")
+        parts = normalized.split()
         return parts[-1] if parts else None
 
     @staticmethod
@@ -91,65 +107,106 @@ class PaymentService:
         if not value:
             return timezone.now()
 
-        try:
-            dt = datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
-            return timezone.make_aware(dt, timezone.get_current_timezone())
-        except Exception:
-            return timezone.now()
+        formats = [
+            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%dT%H:%M:%S",
+            "%Y-%m-%dT%H:%M:%S.%fZ",
+        ]
+
+        for fmt in formats:
+            try:
+                dt = datetime.strptime(value, fmt)
+                return timezone.make_aware(dt, timezone.get_current_timezone())
+            except Exception:
+                pass
+
+        return timezone.now()
 
     def handle_sepay_webhook(self, payload):
-        # 1. Chỉ xử lý giao dịch tiền vào
-        if payload.transferType.lower() != "in":
+        raw_payload = self._payload_to_dict(payload)
+
+        transfer_type = str(
+            self._get_payload_value(payload, "transferType", "")
+        ).lower()
+        transaction_id = self._get_payload_value(payload, "id")
+        content = self._get_payload_value(payload, "content", "")
+        transfer_amount = self._get_payload_value(payload, "transferAmount", 0)
+        transaction_date = self._get_payload_value(payload, "transactionDate")
+        reference_code = self._get_payload_value(payload, "referenceCode")
+
+        # 1. Chỉ xử lý tiền vào
+        if transfer_type != "in":
             return {
                 "success": True,
-                "message": "Ignore outgoing transaction",
+                "message": "Ignored non-incoming transaction",
             }
 
-        # 2. Chống xử lý trùng
-        existed_payment = self.orm.get_payment_by_sepay_transaction_id(payload.id)
+        # 2. Chống duplicate theo transaction id
+        existed_payment = self.orm.get_payment_by_sepay_transaction_id(transaction_id)
         if existed_payment:
             return {
                 "success": True,
                 "message": "Transaction already processed",
             }
 
-        # 3. Tách mã đơn từ nội dung chuyển khoản
-        order_code = self._extract_order_code(payload.content)
+        # 3. Tách mã đơn
+        order_code = self._extract_order_code(content)
         if not order_code:
-            raise HttpError(400, "Cannot extract order code")
-
-        # 4. Tìm order pending
-        order = self.orm.get_pending_order_by_code(order_code)
-        if not order:
-            raise HttpError(404, "Order not found or already processed")
-
-        # 5. Tìm payment của order
-        payment = self.orm.get_payment_by_order(order)
-        if not payment:
-            raise HttpError(404, "Payment not found")
-
-        # 6. Nếu payment đã paid thì bỏ qua
-        if payment.status == "PAID":
             return {
                 "success": True,
-                "message": "Payment already paid",
+                "message": "Cannot extract order code, ignored",
+            }
+
+        # 4. Tìm order theo code
+        order = self.orm.get_order_by_code(order_code)
+        if not order:
+            return {
+                "success": True,
+                "message": f"Order {order_code} not found, ignored",
+            }
+
+        # 5. Tìm payment
+        payment = self.orm.get_payment_by_order(order)
+        if not payment:
+            return {
+                "success": True,
+                "message": f"Payment for order {order_code} not found, ignored",
+            }
+
+        # 6. Nếu đã success rồi thì bỏ qua, không trả lỗi
+        if (
+            payment.status == PaymentStatus.SUCCESS
+            or order.status == OrderStatus.PROCESSING
+        ):
+            return {
+                "success": True,
+                "message": "Payment already processed",
             }
 
         # 7. Đối chiếu số tiền
-        if int(payment.amount) != int(payload.transferAmount):
-            raise HttpError(409, "Amount mismatch")
+        try:
+            if int(payment.amount) != int(transfer_amount):
+                return {
+                    "success": False,
+                    "message": "Amount mismatch",
+                }
+        except Exception:
+            return {
+                "success": False,
+                "message": "Invalid amount",
+            }
 
-        # 8. Parse thời gian giao dịch
-        paid_at = self._parse_transaction_datetime(payload.transactionDate)
+        # 8. Parse thời gian
+        paid_at = self._parse_transaction_datetime(transaction_date)
 
-        # 9. Cập nhật payment + order
+        # 9. Update payment + order
         self.orm.mark_payment_and_order_paid(
             payment=payment,
             order=order,
-            sepay_transaction_id=payload.id,
-            sepay_reference_code=payload.referenceCode,
+            sepay_transaction_id=transaction_id,
+            sepay_reference_code=reference_code,
             paid_at=paid_at,
-            raw_payload=payload.dict(),
+            raw_payload=raw_payload,
         )
 
         return {

@@ -1,5 +1,6 @@
 from django.db import transaction
 from uuid import UUID
+
 from order.models import Order, Payment
 from order.utils import PaymentStatus, OrderStatus
 from order.exceptions import PaymentDoesNotExists
@@ -7,15 +8,14 @@ from order.exceptions import PaymentDoesNotExists
 
 class PaymentORM:
     @staticmethod
-    def get_payment_by_sepay_transaction_id(sepay_transaction_id: int):
+    def get_payment_by_sepay_transaction_id(sepay_transaction_id: int | None):
+        if not sepay_transaction_id:
+            return None
         return Payment.objects.filter(sepay_transaction_id=sepay_transaction_id).first()
 
     @staticmethod
-    def get_pending_order_by_code(order_code: str):
-        return Order.objects.filter(
-            code=order_code,
-            status="PENDING",
-        ).first()
+    def get_order_by_code(order_code: str):
+        return Order.objects.filter(code=order_code).first()
 
     @staticmethod
     def get_payment_by_order(order: Order):
@@ -25,7 +25,7 @@ class PaymentORM:
     def mark_payment_paid(
         payment: Payment,
         sepay_transaction_id: int,
-        sepay_reference_code: str,
+        sepay_reference_code: str | None,
         paid_at,
         raw_payload: dict,
     ):
@@ -51,8 +51,9 @@ class PaymentORM:
 
     @staticmethod
     def mark_order_confirmed(order: Order):
-        order.status = OrderStatus.PROCESSING
-        order.save(update_fields=["status"])
+        if order.status == OrderStatus.PENDING:
+            order.status = OrderStatus.PROCESSING
+            order.save(update_fields=["status"])
         return order
 
     @staticmethod
@@ -60,7 +61,7 @@ class PaymentORM:
         payment: Payment,
         order: Order,
         sepay_transaction_id: int,
-        sepay_reference_code: str,
+        sepay_reference_code: str | None,
         paid_at,
         raw_payload: dict,
     ):
@@ -83,25 +84,21 @@ class PaymentORM:
         except Payment.DoesNotExist:
             raise PaymentDoesNotExists
 
-        # 🔒 Check ownership
         if payment.order.user != user:
             raise PermissionError("Bạn không có quyền truy cập payment này")
 
-        # ✅ Success
         if payment.status == PaymentStatus.SUCCESS:
             return {
                 "status": "SUCCESS",
                 "message": "Thanh toán thành công",
             }
 
-        # ❌ Failed
         if payment.status == PaymentStatus.FAILED:
             return {
                 "status": "FAILED",
                 "message": "Thanh toán thất bại",
             }
 
-        # ⏳ Pending
         return {
             "status": "PENDING",
             "message": "Chưa thanh toán",
