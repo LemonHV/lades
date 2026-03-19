@@ -5,7 +5,7 @@ from uuid import uuid4
 
 
 class Conversation(models.Model):
-    uid = models.UUIDField(default=uuid4, unique=True, editable=False)
+    uid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     user = models.OneToOneField(
         User, on_delete=models.CASCADE, related_name="conversation"
     )
@@ -25,9 +25,9 @@ class Conversation(models.Model):
 
 
 class Message(models.Model):
-    uid = models.UUIDField(default=uuid4, unique=True, editable=False)
+    uid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     conversation = models.ForeignKey(
-        Conversation, on_delete=models.CASCADE, related_name="message"
+        Conversation, on_delete=models.CASCADE, related_name="messages"
     )
 
     sender = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -43,7 +43,7 @@ class Message(models.Model):
 
 
 class Notification(models.Model):
-    uid = models.UUIDField(default=uuid4, unique=True, editable=False)
+    uid = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="notification"
     )
