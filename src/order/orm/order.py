@@ -192,7 +192,7 @@ class OrderORM:
             pass
 
         elif payload.payment_method == "banking":
-            prefix = os.environ.get("PRE_DESCRIPTION", "TKPMTV").strip()
+            prefix = os.environ.get("PRE_DESCRIPTION", "DH102969").strip()
 
             payment.transfer_content = f"{prefix} {order.code}"
             payment.qr_url = build_sepay_qr_url(
