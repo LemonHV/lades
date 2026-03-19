@@ -25,7 +25,7 @@ class Product(models.Model):
     brand = models.ForeignKey(
         to=Brand,
         on_delete=models.CASCADE,
-        related_name="product_fk_brand",
+        related_name="product",
         to_field="uid",
         db_constraint=True,
         db_index=True,
@@ -45,7 +45,7 @@ class ProductImage(models.Model):
     product = models.ForeignKey(
         to=Product,
         on_delete=models.CASCADE,
-        related_name="image_fk_product",
+        related_name="image",
         to_field="uid",
         db_constraint=True,
         db_index=True,
@@ -66,7 +66,7 @@ class VerifyCode(models.Model):
     product = models.ForeignKey(
         to=Product,
         on_delete=models.CASCADE,
-        related_name="verifycode_fk_product",
+        related_name="verifycode",
         to_field="uid",
         db_constraint=True,
         db_index=True,
@@ -83,7 +83,7 @@ class Review(models.Model):
     product = models.ForeignKey(
         to=Product,
         on_delete=models.CASCADE,
-        related_name="review_fk_product",
+        related_name="review",
         to_field="uid",
         db_constraint=True,
         db_index=True,
@@ -93,7 +93,7 @@ class Review(models.Model):
     user = models.ForeignKey(
         to=User,
         on_delete=models.CASCADE,
-        related_name="review_fk_user",
+        related_name="review",
         to_field="uid",
         db_constraint=True,
         db_index=True,
@@ -119,7 +119,7 @@ class VerifierLocation(models.Model):
     verify_code = models.ForeignKey(
         to=VerifyCode,
         on_delete=models.CASCADE,
-        related_name="location_fk_verifycode",
+        related_name="location",
         to_field="uid",
         db_index=True,
     )

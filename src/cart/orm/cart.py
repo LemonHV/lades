@@ -62,9 +62,9 @@ class CartORM:
         except Cart.DoesNotExist:
             return []
 
-        return cart.cart_item_fk_cart.select_related("product").prefetch_related(
+        return cart.cart_item.select_related("product").prefetch_related(
             Prefetch(
-                "product__image_fk_product",
+                "product__image",
                 queryset=ProductImage.objects.all(),
                 to_attr="images",
             )

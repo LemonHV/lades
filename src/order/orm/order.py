@@ -1,11 +1,12 @@
 from uuid import UUID
+import os
 from product.models import Product, ProductImage
 from product.exceptions import ProductDoesNotExists, ProductOutOfStock
 from order.utils import (
     generate_code,
     generate_order_bill,
     send_order_confirmation_email,
-    generate_signature,
+    build_sepay_qr_url,
 )
 from order.schemas import (
     OrderRequestSchema,
@@ -23,9 +24,6 @@ from order.exceptions import (
     OrderDoesNotExists,
     DiscountDoesNotExists,
 )
-import os
-import requests
-from account.utils import SuccessMessage
 
 
 class OrderORM:
@@ -35,22 +33,31 @@ class OrderORM:
         # ================================
         # 1. GET ITEMS
         # ================================
+        buy_items = None
+        cart_items = None
+
         if payload.source == "buy_now":
-            buy_items = payload.order_items
-            cart_items = None
+            buy_items = payload.order_items or []
+            if not buy_items:
+                raise ProductDoesNotExists
         else:
             cart_items = (
                 CartItem.objects.select_related("product")
                 .select_for_update()
                 .filter(cart__user=user, uid__in=payload.cart_item_uids)
             )
-            buy_items = None
+
+            if not cart_items.exists():
+                raise ProductDoesNotExists
 
         # ================================
         # 2. SHIPPING INFO
         # ================================
         try:
-            shipping_info = ShippingInfo.objects.get(id=payload.shipping_info_id)
+            shipping_info = ShippingInfo.objects.get(
+                id=payload.shipping_info_id,
+                user=user,
+            )
         except ShippingInfo.DoesNotExist:
             raise ShippingInfoDoesNotExists
 
@@ -65,7 +72,7 @@ class OrderORM:
             discount_amount=0,
             total_amount=0,
             payment_method=payload.payment_method,
-            note=payload.note,
+            note=payload.note or "",
             name=shipping_info.name,
             phone=shipping_info.phone,
             address=shipping_info.address,
@@ -78,8 +85,10 @@ class OrderORM:
         items_total = 0
 
         if payload.source == "buy_now":
+            product_uids = [item.product_uid for item in buy_items]
+
             products = Product.objects.select_for_update().in_bulk(
-                [item.product_uid for item in buy_items],
+                product_uids,
                 field_name="uid",
             )
 
@@ -87,6 +96,9 @@ class OrderORM:
                 product = products.get(item.product_uid)
                 if not product:
                     raise ProductDoesNotExists
+
+                if item.quantity <= 0:
+                    raise ProductOutOfStock
 
                 if item.quantity > product.quantity_in_stock:
                     raise ProductOutOfStock
@@ -107,6 +119,9 @@ class OrderORM:
             for cart_item in cart_items:
                 product = cart_item.product
 
+                if cart_item.quantity <= 0:
+                    raise ProductOutOfStock
+
                 if cart_item.quantity > product.quantity_in_stock:
                     raise ProductOutOfStock
 
@@ -125,141 +140,79 @@ class OrderORM:
             cart_items.delete()
 
         # ================================
-        # 5. DISCOUNT
+        # 5. APPLY DISCOUNT
         # ================================
         discount_amount = 0
+
         if payload.discount_code:
             discount = Discount.objects.filter(code=payload.discount_code).first()
             if not discount or not discount.is_available():
                 raise DiscountDoesNotExists
 
             order.discount = discount
-            discount_amount = (
-                items_total * discount.value // 100
-                if discount.type == "percent"
-                else discount.value
-            )
+
+            if discount.type == "percent":
+                discount_amount = items_total * discount.value // 100
+            else:
+                discount_amount = discount.value
+
+            if discount_amount < 0:
+                discount_amount = 0
+
+            if discount_amount > items_total:
+                discount_amount = items_total
 
         # ================================
-        # 6. UPDATE TOTAL
+        # 6. UPDATE ORDER TOTAL
         # ================================
+        total_amount = items_total + order.shipping_fee - discount_amount
+        if total_amount < 0:
+            total_amount = 0
+
         order.discount_amount = discount_amount
-        order.total_amount = items_total + order.shipping_fee - discount_amount
+        order.total_amount = total_amount
         order.save()
 
         # ================================
         # 7. CREATE PAYMENT
         # ================================
-
         payment = Payment.objects.create(
             order=order,
-            code=generate_code(),
             method=payload.payment_method,
             amount=order.total_amount,
             status="PENDING",
+            transfer_content="",
+            qr_url="",
         )
 
         # ================================
-        # 8. SEND CONFIRMATION EMAIL
+        # 8. PAYMENT METHOD LOGIC
+        # ================================
+        if payload.payment_method == "cod":
+            pass
+
+        elif payload.payment_method == "banking":
+            prefix = os.environ.get("PRE_DESCRIPTION", "TKPMTV").strip()
+
+            payment.transfer_content = f"{prefix} {order.code}"
+            payment.qr_url = build_sepay_qr_url(
+                amount=payment.amount,
+                order_code=order.code,
+            )
+            payment.save(update_fields=["transfer_content", "qr_url"])
+
+        else:
+            raise ValueError("Unsupported payment method")
+
+        # ================================
+        # 9. SEND EMAIL
         # ================================
         send_order_confirmation_email(order=order, email=user.email)
 
-        if payload.payment_method == "cod":
-            return {
-                "uid": order.uid,
-                "code": order.code,
-                "status": order.status,
-                "total_amount": order.total_amount,
-                "type": "cod",
-                "message": SuccessMessage.CREATE_ORDER_SUCCESS,
-                "payment_code": payment.code,
-                "checkout": None,
-            }
-
-        elif payload.payment_method == "banking":
-            return {
-                "uid": order.uid,
-                "code": order.code,
-                "status": order.status,
-                "total_amount": order.total_amount,
-                "type": "banking",
-                "message": SuccessMessage.CREATE_ORDER_SUCCESS,
-                "payment_code": payment.code,
-                "checkout": OrderORM.build_checkout_response(payment=payment),
-            }
-        raise ValueError("Unsupported payment method")
-
-    @staticmethod
-    def build_checkout_payload(payment: Payment) -> dict:
-        merchant_id = os.environ.get("SEPAY_MERCHANT_ID")
-        if not merchant_id:
-            raise ValueError("Missing SEPAY_MERCHANT_ID")
-
-        fields = {
-            "merchant": merchant_id,
-            "operation": "PURCHASE",
-            "order_invoice_number": payment.order.code,
-            "order_amount": str(int(payment.amount)),
-            "currency": "VND",
-            "order_description": f"Thanh toan don hang {payment.order.code}",
-            "customer_id": str(payment.order.user.uid)
-            if payment.order.user.uid
-            else "",
-            "success_url": os.environ.get("SEPAY_SUCCESS_URL", ""),
-            "error_url": os.environ.get("SEPAY_ERROR_URL", ""),
-            "cancel_url": os.environ.get("SEPAY_CANCEL_URL", ""),
-        }
-
-        fields["signature"] = generate_signature(fields)
-        return fields
-
-    @staticmethod
-    def build_checkout_response(payment) -> dict:
-        return {
-            "method": "POST",
-            "action_url": os.environ.get("SEPAY_CHECKOUT_URL", ""),
-            "fields": OrderORM.build_checkout_payload(payment=payment),
-        }
-
-    @staticmethod
-    @transaction.atomic
-    def handle_sepay_webhook(payload: dict):
-        payment_code = (
-            payload.get("order_invoice_number")
-            or payload.get("payment_code")
-            or payload.get("custom_data")
-        )
-
-        if not payment_code:
-            return {"error": "Missing payment code"}
-
-        try:
-            payment = Payment.objects.select_related("order").get(code=payment_code)
-        except Payment.DoesNotExist:
-            return {"error": "Payment not found"}
-
-        status_value = str(payload.get("status", "")).lower()
-        success_values = {"success", "completed", "paid", "succeeded"}
-
-        if status_value in success_values:
-            if payment.status != "COMPLETED":
-                payment.status = "COMPLETED"
-                payment.save(update_fields=["status"])
-
-            order = payment.order
-            if order.status != "CONFIRMED":
-                order.status = "CONFIRMED"
-                order.save(update_fields=["status"])
-
-            return {"message": "Payment successful and order confirmed"}
-
-        if status_value in {"failed", "error", "cancelled", "canceled"}:
-            if payment.status != "FAILED":
-                payment.status = "FAILED"
-                payment.save(update_fields=["status"])
-            return {"message": "Payment failed"}
-
-        return {"message": "Webhook received", "payment_code": payment_code}
+        # ================================
+        # 10. RESPONSE
+        # ================================
+        return order
 
     @staticmethod
     def update_order_status(order: Order, payload: UpdateOrderStatusSchema):
@@ -271,12 +224,12 @@ class OrderORM:
         try:
             return Order.objects.prefetch_related(
                 Prefetch(
-                    "order_item_fk_order",
+                    "order_item",
                     queryset=OrderItem.objects.select_related(
                         "product"
                     ).prefetch_related(
                         Prefetch(
-                            "product__image_fk_product",
+                            "product__image",
                             queryset=ProductImage.objects.all(),
                             to_attr="images",
                         )
@@ -293,12 +246,12 @@ class OrderORM:
             Order.objects.filter(user=user)
             .prefetch_related(
                 Prefetch(
-                    "order_item_fk_order",
+                    "order_item",
                     queryset=OrderItem.objects.select_related(
                         "product"
                     ).prefetch_related(
                         Prefetch(
-                            "product__image_fk_product",
+                            "product__image",
                             queryset=ProductImage.objects.all(),
                             to_attr="images",
                         )
@@ -315,12 +268,12 @@ class OrderORM:
             Order.objects.all()
             .prefetch_related(
                 Prefetch(
-                    "order_item_fk_order",
+                    "order_item",
                     queryset=OrderItem.objects.select_related(
                         "product"
                     ).prefetch_related(
                         Prefetch(
-                            "product__image_fk_product",
+                            "product__image",
                             queryset=ProductImage.objects.all(),
                             to_attr="images",
                         )
@@ -333,7 +286,7 @@ class OrderORM:
 
     @staticmethod
     def print_order(order: Order):
-        order_items = order.order_item_fk_order.select_related("product").all()
+        order_items = order.order_item.select_related("product").all()
         return generate_order_bill(order=order, order_items=order_items)
 
     @staticmethod

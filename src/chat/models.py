@@ -7,14 +7,14 @@ from uuid import uuid4
 class Conversation(models.Model):
     uid = models.UUIDField(default=uuid4, unique=True, editable=False)
     user = models.OneToOneField(
-        User, on_delete=models.CASCADE, related_name="conversation_fk_user"
+        User, on_delete=models.CASCADE, related_name="conversation"
     )
     last_message = models.ForeignKey(
         "Message",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="conversation_fk_last_message",
+        related_name="+",
     )
     last_message_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -27,7 +27,7 @@ class Conversation(models.Model):
 class Message(models.Model):
     uid = models.UUIDField(default=uuid4, unique=True, editable=False)
     conversation = models.ForeignKey(
-        Conversation, on_delete=models.CASCADE, related_name="message_fk_conversation"
+        Conversation, on_delete=models.CASCADE, related_name="message"
     )
 
     sender = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -45,7 +45,7 @@ class Message(models.Model):
 class Notification(models.Model):
     uid = models.UUIDField(default=uuid4, unique=True, editable=False)
     user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="notification_fk_user"
+        User, on_delete=models.CASCADE, related_name="notification"
     )
     type = models.CharField(max_length=20, choices=NotificationType)
     title = models.CharField(max_length=255)

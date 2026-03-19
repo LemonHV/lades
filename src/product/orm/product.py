@@ -206,7 +206,7 @@ class ProductORM:
             .select_related("brand")
             .prefetch_related(
                 Prefetch(
-                    "image_fk_product",
+                    "image",
                     queryset=ProductImage.objects.all(),
                     to_attr="images",
                 )
@@ -221,12 +221,12 @@ class ProductORM:
             .select_related("brand")
             .prefetch_related(
                 Prefetch(
-                    "image_fk_product",
+                    "image",
                     queryset=ProductImage.objects.all(),
                     to_attr="images",
                 ),
                 Prefetch(
-                    "review_fk_product",
+                    "review",
                     queryset=Review.objects.select_related("user"),
                     to_attr="reviews",
                 ),

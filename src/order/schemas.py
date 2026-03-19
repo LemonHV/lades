@@ -1,10 +1,11 @@
 from ninja import Schema, ModelSchema
-from typing import Literal, Optional, List, Dict, Any
+from typing import Literal, Optional, List
 from uuid import UUID
 from pydantic import model_validator, ConfigDict
-from order.models import Order, OrderItem
+from order.models import Order, OrderItem, Payment
 from product.schemas import ProductResponseSchema
 from order.utils import OrderStatus
+
 
 class BuyNowItemSchema(Schema):
     product_uid: UUID
@@ -38,23 +39,18 @@ class OrderRequestSchema(Schema):
         return self
 
 
+class PaymentResponseSchema(ModelSchema):
+    class Meta:
+        model = Payment
+        fields = ["uid", "status", "method", "amount", "transfer_content", "qr_url"]
 
 
-class CheckoutSchema(Schema):
-    method: str
-    action_url: str
-    fields: Dict[str, Any]
+class OrderCreateResponseSchema(ModelSchema):
+    payment: PaymentResponseSchema
 
-
-class OrderCreateResponseSchema(Schema):
-    uid: UUID
-    code: str
-    status: str
-    total_amount: int
-    type: str
-    message: str
-    payment_code: Optional[str] = None
-    checkout: Optional[CheckoutSchema] = None
+    class Meta:
+        model = Order
+        fields = ["uid", "code", "status", "total_amount"]
 
 
 class OrderItemResponseSchema(ModelSchema):
@@ -77,6 +73,7 @@ class OrderResponseSchema(ModelSchema):
 
 class UpdateOrderStatusSchema(Schema):
     status: OrderStatus
+
 
 class DiscountRequestSchema(Schema):
     name: str

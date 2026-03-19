@@ -11,7 +11,7 @@ class Cart(models.Model):
     user = models.ForeignKey(
         to=User,
         on_delete=models.CASCADE,
-        related_name="cart_fk_user",
+        related_name="cart",
         to_field="uid",
         db_constraint=True,
         db_index=True,
@@ -20,10 +20,10 @@ class Cart(models.Model):
     )
 
     def get_total(self):
-        return sum(item.total_price for item in self.cart_item_fk_cart.all())
+        return sum(item.total_price for item in self.cart_item.all())
 
     def clear(self):
-        self.cart_item_fk_cart.all().delete()
+        self.cart_item.all().delete()
 
 
 class CartItem(models.Model):
@@ -31,7 +31,7 @@ class CartItem(models.Model):
     cart = models.ForeignKey(
         to=Cart,
         on_delete=models.CASCADE,
-        related_name="cart_item_fk_cart",
+        related_name="cart_item",
         to_field="uid",
         db_constraint=True,
         db_index=True,
@@ -41,7 +41,7 @@ class CartItem(models.Model):
     product = models.ForeignKey(
         to=Product,
         on_delete=models.CASCADE,
-        related_name="cart_item_fk_product",
+        related_name="cart_item",
         to_field="uid",
         db_constraint=True,
         db_index=True,

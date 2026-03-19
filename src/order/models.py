@@ -8,29 +8,28 @@ from order.utils import OrderStatus, PaymentStatus
 
 class Payment(models.Model):
     uid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    order = models.ForeignKey(
+    order = models.OneToOneField(
         to="Order",
         on_delete=models.CASCADE,
-        related_name="payment_fk_order",
+        related_name="payment",
         to_field="uid",
         db_constraint=True,
         db_index=True,
         null=False,
         blank=False,
     )
-    code = models.CharField(max_length=255)
     method = models.CharField(max_length=50)
     amount = models.PositiveIntegerField()
     status = models.CharField(
         max_length=20, choices=PaymentStatus, default=PaymentStatus.PENDING
     )
-    description = models.TextField(blank=True, null=True)
-    payment_date = models.DateField(auto_now_add=True)
-    provider_payment_id = models.CharField(max_length=100, null=True, blank=True)
-    provider_response = models.JSONField(null=True, blank=True)
+    transfer_content = models.CharField(max_length=255, blank=True, default="")
+    qr_url = models.TextField(blank=True, default="")
+    paid_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.code} - {self.amount}"
+        return f"{self.order.code} - {self.amount}"
 
 
 class Discount(models.Model):
@@ -82,7 +81,7 @@ class Discount(models.Model):
             return 0
 
     def count_number_of_usage(self):
-        return self.order_fk_discount.count()
+        return self.order.count()
 
     def __str__(self):
         return f"{self.name} ({self.code})"
@@ -106,18 +105,18 @@ class Order(models.Model):
     address = models.CharField(max_length=255)
 
     user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="order_fk_user"
+        User, on_delete=models.CASCADE, related_name="order"
     )
     discount = models.ForeignKey(
         Discount,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="order_fk_discount",
+        related_name="order",
     )
 
     def calculate_total(self):
-        items_total = sum(item.total_price() for item in self.order_item_fk_order.all())
+        items_total = sum(item.total_price() for item in self.order_item.all())
         discount = self.discount_amount or 0
         return items_total - discount + self.shipping_fee
 
@@ -150,7 +149,7 @@ class OrderItem(models.Model):
     order = models.ForeignKey(
         to=Order,
         on_delete=models.CASCADE,
-        related_name="order_item_fk_order",
+        related_name="order_item",
         to_field="uid",
         db_constraint=True,
         db_index=True,
@@ -160,7 +159,7 @@ class OrderItem(models.Model):
     product = models.ForeignKey(
         to=Product,
         on_delete=models.CASCADE,
-        related_name="order_item_fk_product",
+        related_name="order_item",
         to_field="uid",
         db_constraint=True,
         db_index=True,

@@ -44,12 +44,12 @@ class ChatORM:
 
     @staticmethod
     def get_messages(conversation: Conversation):
-        return conversation.message_fk_conversation.all().order_by("created_at")
+        return conversation.message.all().order_by("created_at")
 
     @staticmethod
     def mark_messages_as_read(conversation: Conversation, user: User):
         return (
-            conversation.message_fk_conversation.filter(is_read=False)
+            conversation.message.filter(is_read=False)
             .exclude(sender=user)
             .update(is_read=True)
         )

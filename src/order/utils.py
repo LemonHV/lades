@@ -16,9 +16,7 @@ from django.utils import timezone
 from django.http import HttpResponse
 from django.db.models import TextChoices
 from django.core.mail import send_mail
-import hmac
-import base64
-import hashlib
+from urllib.parse import urlencode
 
 
 @unique
@@ -293,7 +291,7 @@ def send_order_confirmation_email(order, email, link=None):
 
     # Build danh sách sản phẩm thành HTML table đẹp
     items_html = ""
-    for item in getattr(order, "order_items", order.order_item_fk_order.all()):
+    for item in getattr(order, "order_items", order.order_item.all()):
         items_html += f"""
             <tr>
                 <td style="padding:6px 8px; border:1px solid #ddd; font-size:14px; max-width:250px; word-break:break-word;">{item.product.name}</td>
@@ -399,26 +397,11 @@ FIELD_ORDER = [
 ]
 
 
-def generate_signature(fields: dict) -> str:
-    secret_key = os.environ.get("SEPAY_SECRET_KEY")
-
-    if not secret_key:
-        raise ValueError("Missing SEPAY_SECRET_KEY")
-
-    sign_parts = []
-
-    for key in FIELD_ORDER:
-        value = fields.get(key)
-
-        if value is None:
-            continue
-
-        sign_parts.append(f"{key}={value}")
-
-    sign_string = ",".join(sign_parts)
-
-    digest = hmac.new(
-        secret_key.encode(), sign_string.encode(), hashlib.sha256
-    ).digest()
-
-    return base64.b64encode(digest).decode()
+def build_sepay_qr_url(amount: int, order_code: str) -> str:
+    params = {
+        "acc": os.environ.get("BANK_ACCOUNT"),
+        "bank": os.environ.get("BANK_NAME"),
+        "amount": int(amount),
+        "des": f"{os.environ.get('PRE_DESCRIPTION')}{order_code}",
+    }
+    return f"https://qr.sepay.vn/img?{urlencode(params)}"
