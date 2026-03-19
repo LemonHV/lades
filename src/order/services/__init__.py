@@ -78,7 +78,7 @@ class PaymentService:
         if not normalized:
             return None
 
-        prefix = "TKPMTV "
+        prefix = "DH102969 "
         if normalized.startswith(prefix):
             code = normalized[len(prefix) :].strip()
             return code or None
