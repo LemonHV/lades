@@ -2,7 +2,7 @@ from typing import List
 from uuid import UUID
 
 from account.schemas.account import MessageResponseSchema
-from account.utils import SuccessMessage
+from utils.success_message import SuccessMessage
 from cart.schemas import (
     CartItemRequestSchema,
     CartItemResponseSchema,

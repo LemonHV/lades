@@ -16,7 +16,8 @@ from account.schemas.account import (
     UserInfoSchema,
 )
 from account.services import AccountService
-from account.utils import SuccessMessage, get_key
+from account.utils import get_key
+from utils.success_message import SuccessMessage
 from router.authenticate import AuthBear
 from router.controller import Controller, api, get, post, put
 from router.types import AuthenticatedRequest

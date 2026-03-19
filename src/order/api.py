@@ -11,7 +11,7 @@ from order.schemas import (
     UpdateOrderStatusSchema,
 )
 from account.schemas.account import MessageResponseSchema
-from account.utils import SuccessMessage
+from utils.success_message import SuccessMessage
 from order.services import OrderService
 from uuid import UUID
 from typing import List
@@ -69,11 +69,12 @@ class DiscountAPI(Controller):
     def update_discount(self, uid: UUID, payload: DiscountRequestSchema):
         return self.service.update_discount(uid=uid, payload=payload)
 
+
 @api(prefix_or_class="payments", tags=["Payment"], auth=None)
 class PaymentAPI(Controller):
     def __init__(self, service: OrderService):
         self.service = service
-    
+
     @post("/ipn")
     def handle_sepay_webhook(self, request, payload: dict = Body(...)):
         print("=== SEPAY IPN HIT ===")
@@ -82,4 +83,3 @@ class PaymentAPI(Controller):
 
         self.service.handle_sepay_webhook(payload=payload)
         return {"success": True}
-    
