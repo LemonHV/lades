@@ -31,11 +31,15 @@ DEBUG = env == "dev"
 CSRF_TRUSTED_ORIGINS = [
     "https://www.ladesbrush.com",
     "https://ladesbrush.com",
+    "https://www.api.ladesbrush.com",
+    "https://api.ladesbrush.com",
 ]
 
 ALLOWED_HOSTS = [
     "www.ladesbrush.com",
     "ladesbrush.com",
+    "www.api.ladesbrush.com",
+    "api.ladesbrush.com",
     "103.90.225.143",
 ]
 
