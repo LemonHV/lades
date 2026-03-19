@@ -11,6 +11,7 @@ from order.schemas import (
     UpdateOrderStatusSchema,
     SePayWebhookSchema,
     WebhookResponseSchema,
+    ConfirmResponseSchema,
 )
 from account.schemas.account import MessageResponseSchema
 from utils.success_message import SuccessMessage
@@ -79,3 +80,12 @@ class PaymentAPI(Controller):
     @post("/webhook", auth=None, response=WebhookResponseSchema)
     def sepay_webhook(self, request, payload: SePayWebhookSchema):
         return self.service.handle_sepay_webhook(payload)
+
+    @get(
+        "/{uid}/check",
+        auth=AuthBear(),
+        permissions=[IsUser()],
+        response=ConfirmResponseSchema,
+    )
+    def confirm_payment_success(self, uid: UUID):
+        return self.service.confirm_payment_success(uid=uid)

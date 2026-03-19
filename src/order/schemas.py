@@ -116,3 +116,8 @@ class SePayWebhookSchema(Schema):
 class WebhookResponseSchema(Schema):
     success: bool
     message: str
+
+
+class ConfirmResponseSchema(Schema):
+    status: str
+    message: str

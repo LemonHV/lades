@@ -1,7 +1,8 @@
 from django.db import transaction
-
+from uuid import UUID
 from order.models import Order, Payment
 from order.utils import PaymentStatus, OrderStatus
+from order.exceptions import PaymentDoesNotExists
 
 
 class PaymentORM:
@@ -74,3 +75,13 @@ class PaymentORM:
             PaymentORM.mark_order_confirmed(order=order)
 
         return payment, order
+
+    def confirm_payment_success(uid: UUID):
+        try:
+            payment = Payment.objects.get(uid=uid)
+        except Payment.DoesNotExist:
+            raise PaymentDoesNotExists
+        if payment.status == "SUCCESS":
+            return {"status": "SUCCESS", "message": "Thanh toán thành công"}
+
+        return {"status": "PENDING", "message": "Chưa thanh toán"}
