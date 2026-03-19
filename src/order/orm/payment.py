@@ -76,12 +76,33 @@ class PaymentORM:
 
         return payment, order
 
-    def confirm_payment_success(uid: UUID):
+    @staticmethod
+    def confirm_payment_success(self, uid: UUID, user):
         try:
-            payment = Payment.objects.get(uid=uid)
+            payment = Payment.objects.select_related("order").get(uid=uid)
         except Payment.DoesNotExist:
             raise PaymentDoesNotExists
-        if payment.status == "SUCCESS":
-            return {"status": "SUCCESS", "message": "Thanh toán thành công"}
 
-        return {"status": "PENDING", "message": "Chưa thanh toán"}
+        # 🔒 Check ownership
+        if payment.order.user != user:
+            raise PermissionError("Bạn không có quyền truy cập payment này")
+
+        # ✅ Success
+        if payment.status == PaymentStatus.SUCCESS:
+            return {
+                "status": "SUCCESS",
+                "message": "Thanh toán thành công",
+            }
+
+        # ❌ Failed
+        if payment.status == PaymentStatus.FAILED:
+            return {
+                "status": "FAILED",
+                "message": "Thanh toán thất bại",
+            }
+
+        # ⏳ Pending
+        return {
+            "status": "PENDING",
+            "message": "Chưa thanh toán",
+        }
