@@ -6,6 +6,7 @@
     "cart",
     "order",
     "discount",
-    "chat"
+    "chat",
+    "attachment"
   ]
 }

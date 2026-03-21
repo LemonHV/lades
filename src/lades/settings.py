@@ -41,7 +41,7 @@ ALLOWED_HOSTS = [
     "www.api.ladesbrush.com",
     "api.ladesbrush.com",
     "103.90.225.143",
-    "localhost"
+    "localhost",
 ]
 
 CSRF_COOKIE_SECURE = env == "prod"
@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     "channels",
     # App
     "account",
+    "attachment",
     "cart",
     "product",
     "order",
