@@ -6,16 +6,8 @@ from attachment.models import Attachment, AttachmentType
 
 class AttachmentORM:
     @staticmethod
-    def save_attachment(
-        url: str,
-        public_id: str,
-        type: AttachmentType,
-    ) -> Attachment:
-        return Attachment.objects.create(
-            url=url,
-            public_id=public_id,
-            type=type,
-        )
+    def save_attachment(url: str, public_id: str, type: AttachmentType) -> Attachment:
+        return Attachment.objects.create(url=url, public_id=public_id, type=type)
 
     @staticmethod
     def get_attachment_by_uid(uid: UUID) -> Optional[Attachment]:

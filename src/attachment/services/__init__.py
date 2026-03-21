@@ -12,18 +12,11 @@ class AttachmentService:
         self.orm = AttachmentORM()
 
     def upload_attachment(
-        self,
-        file,
-        folder: str,
-        public_id: str,
-        type: AttachmentType,
+        self, file, folder: str, public_id: str, type: AttachmentType
     ):
         try:
             attachment_info = upload(
-                file=file,
-                folder=folder,
-                public_id=public_id,
-                overwrite=True,
+                file=file, folder=folder, public_id=public_id, overwrite=True
             )
         except Exception:
             raise UploadAttachmentFail
@@ -35,9 +28,7 @@ class AttachmentService:
             raise UploadAttachmentFail
 
         return self.orm.save_attachment(
-            url=url,
-            public_id=uploaded_public_id,
-            type=type,
+            url=url, public_id=uploaded_public_id, type=type
         )
 
     def delete_attachment(self, uid: UUID):

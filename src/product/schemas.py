@@ -8,11 +8,11 @@ from product.models import Brand, Product, ProductImage, Review
 
 
 class ProductRequestSchema(ModelSchema):
-    brand_name: str
+    brand_uid: UUID
 
     class Meta:
         model = Product
-        exclude = ["uid", "brand", "deleted", "created_at", "updated_at"]
+        exclude = ["uid", "brand", "is_deleted", "created_at", "updated_at"]
 
 
 class SearchFilterSortSchema(Schema):
@@ -102,6 +102,12 @@ class OnOffResponseSchema(ModelSchema):
 
 class DeleteProductResponseSchema(Schema):
     success: bool
+
+
+class ProductInfoSchema(ModelSchema):
+    name: str
+    code: str
+    description: str
 
 
 class VerifyCodeSchema(Schema):

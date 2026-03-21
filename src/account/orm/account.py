@@ -20,18 +20,11 @@ class AccountORM:
 
     @staticmethod
     def create_user(
-        email: str,
-        password: str | None = None,
-        is_active: bool = False,
-        **extra_fields,
+        email: str, password: str | None = None, is_active: bool = False, **extra_fields
     ) -> User:
         normalized_email = User.objects.normalize_email_value(email)
 
-        user = User(
-            email=normalized_email,
-            is_active=is_active,
-            **extra_fields,
-        )
+        user = User(email=normalized_email, is_active=is_active, **extra_fields)
 
         if password:
             user.set_password(password)

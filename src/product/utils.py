@@ -1,6 +1,4 @@
 import math
-import os
-import secrets
 from io import BytesIO
 from typing import List
 
@@ -14,10 +12,6 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
-
-from account.exceptions import BackendURLNotConfigured
-from product.models import Product, VerifyCode
-
 
 PRODUCT_HEADERS = [
     "Tên sản phẩm",
@@ -113,26 +107,12 @@ def upload_file(file, folder: str, public_id: str, overwrite: bool = True) -> di
         overwrite=overwrite,
     )
 
-
-def generate_qrcode(product: Product):
-    code = secrets.token_urlsafe(32)
-    backend_url = os.environ.get("BACKEND_URL")
-    if not backend_url:
-        raise BackendURLNotConfigured
-    link = f"{backend_url}/api/verifycodes/verify-qrcode?code={code}"
+def generate_qr_image(link: str):
     qr = qrcode.make(link)
     buffer = BytesIO()
     qr.save(buffer, format="PNG")
     buffer.seek(0)
-    result = upload_file(file=buffer, folder="qr_codes/", public_id=f"verify_{code}")
-
-    verify_code = VerifyCode.objects.create(
-        product=product,
-        code=code,
-        qr_url=result["secure_url"],
-    )
-
-    return verify_code
+    return buffer
 
 
 def generate_qrcode_pdf(verify_codes):
@@ -380,6 +360,7 @@ VERIFY_QR_TEMPLATE = """
 </body>
 </html>
 """
+
 
 def get_ip_location(ip: str):
     try:

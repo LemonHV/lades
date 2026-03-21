@@ -6,6 +6,7 @@ from uuid import uuid4
 @unique
 class AttachmentType(models.TextChoices):
     PRODUCT = "PRODUCT", "Product"
+    VERIFYCODE = "VERIFYCODE", "Verifycode"
     MESSAGE = "MESSAGE", "Message"
     REVIEW = "REVIEW", "Review"
 
