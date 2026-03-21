@@ -1,20 +1,32 @@
-from attachment.orm.attachment import AttachmentORM
-from cloudinary.uploader import upload, destroy
-from attachment.exceptions import UploadAttachmentFail, AttachmentNotExists
 from uuid import UUID
+
+from cloudinary.uploader import destroy, upload
+
+from attachment.exceptions import AttachmentNotExists, UploadAttachmentFail
+from attachment.models import AttachmentType
+from attachment.orm.attachment import AttachmentORM
 
 
 class AttachmentService:
     def __init__(self):
         self.orm = AttachmentORM()
 
-    def upload_attachment(self, file, folder: str, public_id: str):
-        attachment_info = upload(
-            file=file,
-            folder=folder,
-            public_id=public_id,
-            overwrite=True,
-        )
+    def upload_attachment(
+        self,
+        file,
+        folder: str,
+        public_id: str,
+        type: AttachmentType,
+    ):
+        try:
+            attachment_info = upload(
+                file=file,
+                folder=folder,
+                public_id=public_id,
+                overwrite=True,
+            )
+        except Exception:
+            raise UploadAttachmentFail
 
         url = attachment_info.get("secure_url")
         uploaded_public_id = attachment_info.get("public_id")
@@ -22,11 +34,11 @@ class AttachmentService:
         if not url or not uploaded_public_id:
             raise UploadAttachmentFail
 
-        attachment = self.orm.save_attachment(
+        return self.orm.save_attachment(
             url=url,
             public_id=uploaded_public_id,
+            type=type,
         )
-        return attachment
 
     def delete_attachment(self, uid: UUID):
         attachment = self.orm.get_attachment_by_uid(uid=uid)
@@ -34,7 +46,10 @@ class AttachmentService:
         if not attachment:
             raise AttachmentNotExists
 
-        if attachment.public_id:
-            destroy(attachment.public_id)
+        try:
+            if attachment.public_id:
+                destroy(attachment.public_id)
+        except Exception:
+            pass
 
         self.orm.delete_attachment(attachment=attachment)
