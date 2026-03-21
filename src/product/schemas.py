@@ -34,7 +34,7 @@ class BrandResponseSchema(ModelSchema):
 class ProductImageResponseSchema(ModelSchema):
     class Meta:
         model = ProductImage
-        fields = ["id", "url", "is_main"]
+        fields = ["uid", "is_main"]
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -56,7 +56,6 @@ class ProductReviewResponseSchema(ModelSchema):
             "uid",
             "rating",
             "comment",
-            "image_url",
             "created_at",
             "updated_at",
             "user",
@@ -68,7 +67,7 @@ class ProductReviewResponseSchema(ModelSchema):
 class ProductSchema(ModelSchema):
     class Meta:
         model = Product
-        exclude = ["deleted", "created_at", "updated_at"]
+        exclude = ["is_deleted", "created_at", "updated_at"]
 
 
 class ProductResponseSchema(ModelSchema):
@@ -85,7 +84,7 @@ class ProductResponseSchema(ModelSchema):
 class ProductUIDResponseSchema(ModelSchema):
     class Meta:
         model = Product
-        exclude = ["deleted", "created_at", "updated_at"]
+        exclude = ["is_deleted", "created_at", "updated_at"]
 
     brand: BrandResponseSchema
     images: Optional[List[ProductImageResponseSchema]]
@@ -97,14 +96,14 @@ class ProductUIDResponseSchema(ModelSchema):
 class OnOffResponseSchema(ModelSchema):
     class Meta:
         model = Product
-        fields = ["uid", "deleted"]
+        fields = ["uid", "is_deleted"]
 
 
 class DeleteProductResponseSchema(Schema):
     success: bool
 
 
-class ProductInfoSchema(ModelSchema):
+class ProductInfoSchema(Schema):
     name: str
     code: str
     description: str
@@ -113,7 +112,6 @@ class ProductInfoSchema(ModelSchema):
 class VerifyCodeSchema(Schema):
     uid: UUID
     code: str
-    qr_url: str
     max_scan: int
     scan_count: int
 
