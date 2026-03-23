@@ -180,3 +180,13 @@ class VerifierLocationSchema(Schema):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     timezone: Optional[str] = None
+
+
+class BrandRequestSchema(Schema):
+    name: str
+
+
+class BrandResponseSchema(ModelSchema):
+    class Meta:
+        model = Brand
+        fields = ["uid", "name"]

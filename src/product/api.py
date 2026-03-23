@@ -5,14 +5,16 @@ from uuid import UUID
 from typing import List
 from ninja import Query
 from product.schemas import (
-    ProductResponseSchema,
-    ProductRequestSchema,
-    ProductSchema,
-    ProductImageResponseSchema,
-    SearchFilterSortSchema,
-    ProductUIDResponseSchema,
-    OnOffResponseSchema,
+    BrandRequestSchema,
+    BrandResponseSchema,
     DeleteProductResponseSchema,
+    OnOffResponseSchema,
+    ProductImageResponseSchema,
+    ProductRequestSchema,
+    ProductResponseSchema,
+    ProductSchema,
+    ProductUIDResponseSchema,
+    SearchFilterSortSchema,
 )
 from router.types import AuthenticatedRequest
 from router.authenticate import AuthBear
@@ -113,6 +115,28 @@ class ProductController(Controller):
             uid=uid, quantity=number_qrcode
         )
         return generate_qrcode_pdf(verify_codes)
+
+
+@api(prefix_or_class="brands", tags=["Brand"], auth=None)
+class BrandController(Controller):
+    def __init__(self) -> None:
+        self.service = ProductService()
+
+    @post("", response=BrandResponseSchema, auth=AuthBear(), permissions=[IsAdmin()])
+    def create_brand(self, payload: BrandRequestSchema):
+        return self.service.create_brand(name=payload.name)
+
+    @get("", response=List[BrandResponseSchema])
+    def get_brands(self):
+        return self.service.get_brands()
+
+    @get("/{uid}", response=BrandResponseSchema)
+    def get_brand(self, uid: UUID):
+        return self.service.get_brand_by_uid(uid=uid)
+
+    @delete("/{uid}")
+    def delete_brand(self, uid: UUID):
+        self.service.delete_brand(uid=uid)
 
 
 @api(prefix_or_class="verifycodes", tags=["Verify Code"], auth=None)

@@ -178,3 +178,16 @@ class ProductService:
         if not product:
             raise ProductDoesNotExists
         self.orm.hard_delete_product(product=product)
+
+    def create_brand(self, name: str):
+        return self.orm.create_brand(name=name)
+
+    def get_brands(self):
+        return self.orm.get_brands()
+
+    def get_brand_by_uid(self, uid: UUID):
+        return self.orm.get_brand_by_uid(uid=uid)
+
+    def delete_brand(self, uid: UUID):
+        brand = self.orm.get_brand_by_uid(uid=uid)
+        self.orm.delete_brand(brand=brand)
