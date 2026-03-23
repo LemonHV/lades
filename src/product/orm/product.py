@@ -82,7 +82,7 @@ class ProductORM:
                         )
                     )
                     .order_by("-created_at"),
-                    to_attr="reviews",
+                    to_attr="review_list",
                 ),
             )
             .first()
@@ -114,7 +114,7 @@ class ProductORM:
                         )
                     )
                     .order_by("-created_at"),
-                    to_attr="reviews",
+                    to_attr="review_list",
                 ),
             )
             .first()

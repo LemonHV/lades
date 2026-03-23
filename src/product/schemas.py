@@ -30,6 +30,10 @@ class SearchFilterSortSchema(Schema):
     sort: str = Query("asc")
 
 
+class BrandRequestSchema(Schema):
+    name: str
+
+
 # =========================
 # BASE RESPONSE SCHEMAS
 # =========================
@@ -119,7 +123,7 @@ class ProductResponseSchema(ModelSchema):
 class ProductDetailResponseSchema(ModelSchema):
     brand: BrandResponseSchema
     images: List[ProductImageResponseSchema] = Field(default_factory=list)
-    reviews: List[ReviewResponseSchema] = Field(default_factory=list)
+    review_list: List[ReviewResponseSchema] = Field(default_factory=list)
 
     class Meta:
         model = Product
@@ -180,13 +184,3 @@ class VerifierLocationSchema(Schema):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     timezone: Optional[str] = None
-
-
-class BrandRequestSchema(Schema):
-    name: str
-
-
-class BrandResponseSchema(ModelSchema):
-    class Meta:
-        model = Brand
-        fields = ["uid", "name"]
