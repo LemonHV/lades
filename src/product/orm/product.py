@@ -2,12 +2,7 @@ from uuid import UUID
 from django.db import transaction
 from django.db.models import Prefetch, Q, QuerySet
 from typing import List, Optional
-from product.models import (
-    Brand,
-    Product,
-    ProductImage,
-    Review,
-)
+from product.models import Brand, Product, ProductImage, Review, ReviewAttachment
 from attachment.models import Attachment
 from product.schemas import (
     SearchFilterSortSchema,
@@ -51,8 +46,10 @@ class ProductORM:
             .select_related("brand")
             .prefetch_related(
                 Prefetch(
-                    "image",
-                    queryset=ProductImage.objects.all(),
+                    "product_images",
+                    queryset=ProductImage.objects.select_related("attachment").order_by(
+                        "sort_order", "created_at"
+                    ),
                     to_attr="images",
                 )
             )
@@ -66,13 +63,25 @@ class ProductORM:
             .select_related("brand")
             .prefetch_related(
                 Prefetch(
-                    "image",
-                    queryset=ProductImage.objects.all(),
+                    "product_images",
+                    queryset=ProductImage.objects.select_related("attachment").order_by(
+                        "sort_order", "created_at"
+                    ),
                     to_attr="images",
                 ),
                 Prefetch(
-                    "review",
-                    queryset=Review.objects.select_related("user"),
+                    "reviews",
+                    queryset=Review.objects.select_related("user")
+                    .prefetch_related(
+                        Prefetch(
+                            "review_attachments",
+                            queryset=ReviewAttachment.objects.select_related(
+                                "attachment"
+                            ).order_by("sort_order", "created_at"),
+                            to_attr="images",
+                        )
+                    )
+                    .order_by("-created_at"),
                     to_attr="reviews",
                 ),
             )
@@ -86,13 +95,25 @@ class ProductORM:
             .select_related("brand")
             .prefetch_related(
                 Prefetch(
-                    "image",
-                    queryset=ProductImage.objects.all(),
+                    "product_images",
+                    queryset=ProductImage.objects.select_related("attachment").order_by(
+                        "sort_order", "created_at"
+                    ),
                     to_attr="images",
                 ),
                 Prefetch(
-                    "review",
-                    queryset=Review.objects.select_related("user"),
+                    "reviews",
+                    queryset=Review.objects.select_related("user")
+                    .prefetch_related(
+                        Prefetch(
+                            "review_attachments",
+                            queryset=ReviewAttachment.objects.select_related(
+                                "attachment"
+                            ).order_by("sort_order", "created_at"),
+                            to_attr="images",
+                        )
+                    )
+                    .order_by("-created_at"),
                     to_attr="reviews",
                 ),
             )

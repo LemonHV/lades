@@ -1,10 +1,17 @@
 from typing import List, Optional
 from uuid import UUID
+
+from ninja import Field, ModelSchema, Query, Schema
 from pydantic import ConfigDict
-from ninja import ModelSchema, Query, Schema
 
 from account.models import User
-from product.models import Brand, Product, ProductImage, Review
+from attachment.schemas import AttachmentSchema
+from product.models import Brand, Product, ProductImage, Review, ReviewAttachment
+
+
+# =========================
+# REQUEST / QUERY SCHEMAS
+# =========================
 
 
 class ProductRequestSchema(ModelSchema):
@@ -23,18 +30,15 @@ class SearchFilterSortSchema(Schema):
     sort: str = Query("asc")
 
 
+# =========================
+# BASE RESPONSE SCHEMAS
+# =========================
+
+
 class BrandResponseSchema(ModelSchema):
     class Meta:
         model = Brand
         fields = ["uid", "name"]
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class ProductImageResponseSchema(ModelSchema):
-    class Meta:
-        model = ProductImage
-        fields = ["uid", "is_main"]
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -47,50 +51,90 @@ class UserResponseSchema(ModelSchema):
     model_config = ConfigDict(from_attributes=True)
 
 
-class ProductReviewResponseSchema(ModelSchema):
-    user: UserResponseSchema
-
-    class Meta:
-        model = Review
-        fields = [
-            "uid",
-            "rating",
-            "comment",
-            "created_at",
-            "updated_at",
-            "user",
-        ]
-
-    model_config = ConfigDict(from_attributes=True)
-
-
 class ProductSchema(ModelSchema):
     class Meta:
         model = Product
         exclude = ["is_deleted", "created_at", "updated_at"]
 
+    model_config = ConfigDict(from_attributes=True)
+
+
+# =========================
+# PRODUCT IMAGE SCHEMAS
+# =========================
+
+
+class ProductImageResponseSchema(ModelSchema):
+    attachment: AttachmentSchema
+
+    class Meta:
+        model = ProductImage
+        exclude = ["created_at"]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# =========================
+# REVIEW SCHEMAS
+# =========================
+
+
+class ReviewAttachmentResponseSchema(ModelSchema):
+    attachment: AttachmentSchema
+
+    class Meta:
+        model = ReviewAttachment
+        exclude = ["created_at"]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ReviewResponseSchema(ModelSchema):
+    user: UserResponseSchema
+    images: List[ReviewAttachmentResponseSchema] = Field(default_factory=list)
+
+    class Meta:
+        model = Review
+        exclude = ["updated_at"]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# =========================
+# PRODUCT RESPONSE SCHEMAS
+# =========================
+
 
 class ProductResponseSchema(ModelSchema):
+    brand: BrandResponseSchema
+    images: List[ProductImageResponseSchema] = Field(default_factory=list)
+
     class Meta:
         model = Product
         exclude = ["created_at", "updated_at"]
 
-    brand: BrandResponseSchema
-    images: Optional[List[ProductImageResponseSchema]] = []
-
     model_config = ConfigDict(from_attributes=True)
 
 
-class ProductUIDResponseSchema(ModelSchema):
+class ProductDetailResponseSchema(ModelSchema):
+    brand: BrandResponseSchema
+    images: List[ProductImageResponseSchema] = Field(default_factory=list)
+    reviews: List[ReviewResponseSchema] = Field(default_factory=list)
+
     class Meta:
         model = Product
-        exclude = ["is_deleted", "created_at", "updated_at"]
-
-    brand: BrandResponseSchema
-    images: Optional[List[ProductImageResponseSchema]]
-    reviews: Optional[List[ProductReviewResponseSchema]]
+        exclude = ["created_at", "updated_at"]
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ProductUIDResponseSchema(ProductDetailResponseSchema):
+    pass
+
+
+# =========================
+# SIMPLE ACTION RESPONSES
+# =========================
 
 
 class OnOffResponseSchema(ModelSchema):
@@ -98,9 +142,16 @@ class OnOffResponseSchema(ModelSchema):
         model = Product
         fields = ["uid", "is_deleted"]
 
+    model_config = ConfigDict(from_attributes=True)
+
 
 class DeleteProductResponseSchema(Schema):
     success: bool
+
+
+# =========================
+# OTHER PRODUCT / VERIFY SCHEMAS
+# =========================
 
 
 class ProductInfoSchema(Schema):
@@ -118,14 +169,14 @@ class VerifyCodeSchema(Schema):
 
 class VerifierLocationSchema(Schema):
     verify_code_uid: UUID
-    ip_addess: str
-    ips: str = None
-    country: str = None
-    country_code: str = None
-    region: str = None
-    region_name: str = None
-    city: str = None
-    zip_code: str = None
-    latitude: str = None
-    longitude: str = None
-    timezone: str = None
+    ip_address: Optional[str] = None
+    isp: Optional[str] = None
+    country: Optional[str] = None
+    country_code: Optional[str] = None
+    region: Optional[str] = None
+    region_name: Optional[str] = None
+    city: Optional[str] = None
+    zip_code: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    timezone: Optional[str] = None
