@@ -22,7 +22,7 @@ from product.models import (
 
 class SearchFilterSortSchema(Schema):
     search: Optional[str] = Query(None)
-    brand: Optional[UUID] = Query(None)
+    brand: Optional[str] = Query(None)
     min_price: Optional[int] = Query(None)
     max_price: Optional[int] = Query(None)
     sort: str = Query("asc")
