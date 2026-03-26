@@ -172,7 +172,7 @@ class ProductService:
         product = self.orm.get_product_by_uid(uid=uid)
         if not product:
             raise ProductDoesNotExists
-        return self.orm.soft_delete_product(product=product)
+        return self.orm.on_off_product(product=product)
 
     def delete_product(self, uid: UUID):
         product = self.orm.get_product_by_uid(uid=uid)
