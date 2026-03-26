@@ -63,7 +63,7 @@ class ProductORM:
     @staticmethod
     def get_product_by_uid(uid: UUID) -> Optional[Product]:
         return (
-            Product.objects.filter(uid=uid, is_deleted=False)
+            Product.objects.filter(uid=uid)
             .select_related("brand")
             .prefetch_related(
                 Prefetch(
@@ -95,7 +95,7 @@ class ProductORM:
     @staticmethod
     def get_product_by_code(code: str) -> Optional[Product]:
         return (
-            Product.objects.filter(code=code, is_deleted=False)
+            Product.objects.filter(code=code)
             .select_related("brand")
             .prefetch_related(
                 Prefetch(
