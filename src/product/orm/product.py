@@ -30,7 +30,7 @@ class ProductORM:
             )
 
         if payload.brand:
-            query &= Q(brand__uid=payload.brand)
+            query &= Q(brand__name=payload.brand)
 
         if payload.min_price is not None:
             query &= Q(sale_price__gte=payload.min_price)
