@@ -116,7 +116,7 @@ class ProductResponseSchema(ModelSchema):
 class ProductDetailResponseSchema(ModelSchema):
     brand: BrandResponseSchema
     images: List[ProductImageResponseSchema] = Field(default_factory=list)
-    reviews: List[ReviewResponseSchema] = Field(default_factory=list)
+    product_reviews: List[ReviewResponseSchema] = Field(default_factory=list)
 
     class Meta:
         model = Product

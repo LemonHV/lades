@@ -114,7 +114,7 @@ class ProductORM:
                         )
                     )
                     .order_by("-created_at"),
-                    to_attr="reviews",
+                    to_attr="product_reviews",
                 ),
             )
             .first()
