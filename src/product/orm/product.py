@@ -22,11 +22,8 @@ class ProductORM:
         return Product.objects.bulk_create(products)
 
     @staticmethod
-    def get_products(payload: SearchFilterSortSchema, user: User) -> QuerySet[Product]:
-        query = Q()
-
-        if not user.is_staff:
-            query &= Q(is_deleted=False)
+    def get_products(payload: SearchFilterSortSchema) -> QuerySet[Product]:
+        query = Q(is_deleted=False)
 
         if payload.search:
             query &= Q(name__icontains=payload.search) | Q(
@@ -63,7 +60,7 @@ class ProductORM:
     @staticmethod
     def get_product_by_uid(uid: UUID) -> Optional[Product]:
         return (
-            Product.objects.filter(uid=uid)
+            Product.objects.filter(uid=uid, is_deleted=False)
             .select_related("brand")
             .prefetch_related(
                 Prefetch(
@@ -95,7 +92,7 @@ class ProductORM:
     @staticmethod
     def get_product_by_code(code: str) -> Optional[Product]:
         return (
-            Product.objects.filter(code=code)
+            Product.objects.filter(code=code, is_deleted=False)
             .select_related("brand")
             .prefetch_related(
                 Prefetch(
