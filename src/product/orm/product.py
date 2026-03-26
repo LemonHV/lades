@@ -138,9 +138,16 @@ class ProductORM:
 
     @staticmethod
     def update_product(product: Product, **product_info) -> Product:
-        for field, value in product_info.items():
+        filtered_info = {
+            field: value for field, value in product_info.items() if value is not None
+        }
+
+        for field, value in filtered_info.items():
             setattr(product, field, value)
-        product.save(update_fields=[*product_info.keys(), "updated_at"])
+
+        if filtered_info:
+            product.save(update_fields=[*filtered_info.keys(), "updated_at"])
+
         return product
 
     @staticmethod
