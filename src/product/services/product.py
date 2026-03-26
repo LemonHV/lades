@@ -152,8 +152,8 @@ class ProductService:
         if attachment_uid:
             self.attachment_service.delete_attachment(attachment_uid)
 
-    def get_products(self, payload: SearchFilterSortSchema, user: User):
-        return self.orm.get_products(payload=payload, user=user)
+    def get_products(self, payload: SearchFilterSortSchema):
+        return self.orm.get_products(payload=payload)
 
     def get_product_by_uid(self, uid: UUID):
         product = self.orm.get_product_by_uid(uid=uid)
