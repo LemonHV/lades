@@ -25,7 +25,7 @@ class ProductORM:
     def get_products(payload: SearchFilterSortSchema, user: User) -> QuerySet[Product]:
         query = Q()
         if not user.is_staff:
-            query = Q(is_deleted=False)
+            query &= Q(is_deleted=False)
 
         if payload.search:
             query &= Q(name__icontains=payload.search) | Q(
