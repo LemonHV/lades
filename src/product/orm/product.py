@@ -24,6 +24,7 @@ class ProductORM:
     @staticmethod
     def get_products(payload: SearchFilterSortSchema, user: User) -> QuerySet[Product]:
         query = Q()
+
         if not user.is_staff:
             query &= Q(is_deleted=False)
 
@@ -158,8 +159,8 @@ class ProductORM:
         return Product.objects.bulk_update(products, fields=fields)
 
     @staticmethod
-    def soft_delete_product(product: Product) -> Product:
-        product.is_deleted = True
+    def on_off_product(product: Product) -> Product:
+        product.is_deleted = not product.is_deleted
         product.save(update_fields=["is_deleted", "updated_at"])
         return product
 
