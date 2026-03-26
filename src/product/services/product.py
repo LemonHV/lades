@@ -10,6 +10,7 @@ from product.exceptions import (
     ProductImageDoesNotExists,
 )
 from product.models import Product, Brand, ProductImage
+from account.models import User
 from product.utils import build_product_workbook, load_product_information
 from attachment.services import AttachmentService
 from attachment.models import AttachmentType
@@ -151,8 +152,8 @@ class ProductService:
         if attachment_uid:
             self.attachment_service.delete_attachment(attachment_uid)
 
-    def get_products(self, payload: SearchFilterSortSchema):
-        return self.orm.get_products(payload=payload)
+    def get_products(self, payload: SearchFilterSortSchema, user: User):
+        return self.orm.get_products(payload=payload, user=user)
 
     def get_product_by_uid(self, uid: UUID):
         product = self.orm.get_product_by_uid(uid=uid)

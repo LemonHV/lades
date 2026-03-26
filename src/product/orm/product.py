@@ -3,6 +3,7 @@ from django.db import transaction
 from django.db.models import Prefetch, Q, QuerySet
 from typing import List, Optional
 from product.models import Brand, Product, ProductImage, Review, ReviewAttachment
+from account.models import User
 from attachment.models import Attachment
 from product.schemas import (
     SearchFilterSortSchema,
@@ -21,8 +22,10 @@ class ProductORM:
         return Product.objects.bulk_create(products)
 
     @staticmethod
-    def get_products(payload: SearchFilterSortSchema) -> QuerySet[Product]:
-        query = Q(is_deleted=False)
+    def get_products(payload: SearchFilterSortSchema, user: User) -> QuerySet[Product]:
+        query = Q()
+        if not user.is_staff:
+            query = Q(is_deleted=False)
 
         if payload.search:
             query &= Q(name__icontains=payload.search) | Q(

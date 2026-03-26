@@ -77,8 +77,8 @@ class ProductController(Controller):
 
     @get("", response=ProductResponseSchema, paginate=True)
     @paginate
-    def get_products(self, payload: SearchFilterSortSchema = Query(...)):
-        return self.service.get_products(payload=payload)
+    def get_products(self, request: AuthenticatedRequest, payload: SearchFilterSortSchema = Query(...)):
+        return self.service.get_products(payload=payload, user=request.user)
 
     @get("/{uid}", response=ProductDetailResponseSchema)
     def get_product_by_uid(self, uid: UUID):
