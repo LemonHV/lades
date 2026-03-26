@@ -177,7 +177,7 @@ class ProductService:
         product = self.orm.get_product_by_uid(uid=uid)
         if not product:
             raise ProductDoesNotExists
-        self.orm.hard_delete_product(product=product)
+        return self.orm.hard_delete_product(product=product)
 
     def create_brand(self, name: str):
         return self.orm.create_brand(name=name)
@@ -190,4 +190,4 @@ class ProductService:
 
     def delete_brand(self, uid: UUID):
         brand = self.orm.get_brand_by_uid(uid=uid)
-        self.orm.delete_brand(brand=brand)
+        return self.orm.delete_brand(brand=brand)

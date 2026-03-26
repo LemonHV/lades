@@ -6,20 +6,18 @@ from pydantic import ConfigDict
 
 from account.models import User
 from attachment.schemas import AttachmentSchema
-from product.models import Brand, Product, ProductImage, Review, ReviewAttachment
+from product.models import (
+    Brand,
+    Product,
+    ProductImage,
+    Review,
+    ReviewAttachment,
+    VerifyCode,
+    VerifierLocation,
+)
 
 
-# =========================
-# REQUEST / QUERY SCHEMAS
-# =========================
-
-
-class ProductRequestSchema(ModelSchema):
-    brand_uid: UUID
-
-    class Meta:
-        model = Product
-        exclude = ["uid", "brand", "is_deleted", "created_at", "updated_at"]
+### FILTER SCHEMA ###
 
 
 class SearchFilterSortSchema(Schema):
@@ -30,13 +28,31 @@ class SearchFilterSortSchema(Schema):
     sort: str = Query("asc")
 
 
+### REQUEST SCHEMA ###
+
+
 class BrandRequestSchema(Schema):
     name: str
 
 
-# =========================
-# BASE RESPONSE SCHEMAS
-# =========================
+class ProductRequestSchema(ModelSchema):
+    brand_uid: UUID
+
+    class Meta:
+        model = Product
+        exclude = ["uid", "brand", "is_deleted", "created_at", "updated_at"]
+
+
+class ProductUpdateSchema(ModelSchema):
+    name: Optional[str] = None
+    type: Optional[str] = None
+    origin_price: Optional[int] = None
+    sale_price: Optional[int] = None
+    description: Optional[str] = None
+    quantity_in_stock: Optional[int] = None
+
+
+### RESPONSE SCHEMA ###
 
 
 class BrandResponseSchema(ModelSchema):
@@ -45,27 +61,6 @@ class BrandResponseSchema(ModelSchema):
         fields = ["uid", "name"]
 
     model_config = ConfigDict(from_attributes=True)
-
-
-class UserResponseSchema(ModelSchema):
-    class Meta:
-        model = User
-        fields = ["uid", "name", "email"]
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class ProductSchema(ModelSchema):
-    class Meta:
-        model = Product
-        exclude = ["is_deleted", "created_at", "updated_at"]
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-# =========================
-# PRODUCT IMAGE SCHEMAS
-# =========================
 
 
 class ProductImageResponseSchema(ModelSchema):
@@ -78,17 +73,20 @@ class ProductImageResponseSchema(ModelSchema):
     model_config = ConfigDict(from_attributes=True)
 
 
-# =========================
-# REVIEW SCHEMAS
-# =========================
-
-
 class ReviewAttachmentResponseSchema(ModelSchema):
     attachment: AttachmentSchema
 
     class Meta:
         model = ReviewAttachment
         exclude = ["created_at"]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserResponseSchema(ModelSchema):
+    class Meta:
+        model = User
+        fields = ["uid", "name", "email"]
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -102,11 +100,6 @@ class ReviewResponseSchema(ModelSchema):
         exclude = ["updated_at"]
 
     model_config = ConfigDict(from_attributes=True)
-
-
-# =========================
-# PRODUCT RESPONSE SCHEMAS
-# =========================
 
 
 class ProductResponseSchema(ModelSchema):
@@ -123,22 +116,13 @@ class ProductResponseSchema(ModelSchema):
 class ProductDetailResponseSchema(ModelSchema):
     brand: BrandResponseSchema
     images: List[ProductImageResponseSchema] = Field(default_factory=list)
-    review_list: List[ReviewResponseSchema] = Field(default_factory=list)
+    reviews: List[ReviewResponseSchema] = Field(default_factory=list)
 
     class Meta:
         model = Product
         exclude = ["created_at", "updated_at"]
 
     model_config = ConfigDict(from_attributes=True)
-
-
-class ProductUIDResponseSchema(ProductDetailResponseSchema):
-    pass
-
-
-# =========================
-# SIMPLE ACTION RESPONSES
-# =========================
 
 
 class OnOffResponseSchema(ModelSchema):
@@ -153,9 +137,8 @@ class DeleteProductResponseSchema(Schema):
     success: bool
 
 
-# =========================
-# OTHER PRODUCT / VERIFY SCHEMAS
-# =========================
+class DeleteBrandResponseSchema(Schema):
+    success: bool
 
 
 class ProductInfoSchema(Schema):
@@ -164,14 +147,30 @@ class ProductInfoSchema(Schema):
     description: str
 
 
-class VerifyCodeSchema(Schema):
-    uid: UUID
-    code: str
-    max_scan: int
-    scan_count: int
+class PrintQRCodeRequestSchema(Schema):
+    quantity: int
+    max_scan: Optional[int]
 
 
-class VerifierLocationSchema(Schema):
+class VerifyCodeResponseSchema(ModelSchema):
+    class Meta:
+        model = VerifyCode
+        fields = ["uid", "code", "max_scan", "scan_count"]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class VerifierLocationResponseSchema(ModelSchema):
+    verify_code: VerifyCodeResponseSchema
+
+    class Meta:
+        model = VerifierLocation
+        fields = "__all__"
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class VerifierLocationRequestSchema(Schema):
     verify_code_uid: UUID
     ip_address: Optional[str] = None
     isp: Optional[str] = None

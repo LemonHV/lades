@@ -2,6 +2,7 @@ from uuid import UUID
 from product.models import Product, VerifyCode, VerifierLocation
 from attachment.models import Attachment
 from product.schemas import ProductInfoSchema
+from django.db.models import Prefetch
 
 
 class VerifyCodeORM:
@@ -31,6 +32,12 @@ class VerifyCodeORM:
     @staticmethod
     def create_verifier_location(**verifier_location_info):
         return VerifierLocation.objects.create(**verifier_location_info)
+
+    @staticmethod
+    def get_verifier_location_by_code(code: str):
+        return VerifierLocation.objects.select_related("verify_code").filter(
+            verify_code__code=code
+        )
 
     @staticmethod
     def increase_scan_count(verify_code: VerifyCode):

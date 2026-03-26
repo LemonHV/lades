@@ -7,14 +7,17 @@ from ninja import Query
 from product.schemas import (
     BrandRequestSchema,
     BrandResponseSchema,
+    DeleteBrandResponseSchema,
     DeleteProductResponseSchema,
     OnOffResponseSchema,
+    PrintQRCodeRequestSchema,
+    ProductDetailResponseSchema,
     ProductImageResponseSchema,
     ProductRequestSchema,
     ProductResponseSchema,
-    ProductSchema,
-    ProductUIDResponseSchema,
+    ProductUpdateSchema,
     SearchFilterSortSchema,
+    VerifierLocationResponseSchema,
 )
 from router.types import AuthenticatedRequest
 from router.authenticate import AuthBear
@@ -50,7 +53,7 @@ class ProductController(Controller):
 
     @post(
         "/multi-product",
-        response=List[ProductSchema],
+        response=List[ProductResponseSchema],
         auth=AuthBear(),
         permissions=[IsAdmin()],
     )
@@ -77,18 +80,18 @@ class ProductController(Controller):
     def get_products(self, payload: SearchFilterSortSchema = Query(...)):
         return self.service.get_products(payload=payload)
 
-    @get("/{uid}", response=ProductUIDResponseSchema)
+    @get("/{uid}", response=ProductDetailResponseSchema)
     def get_product_by_uid(self, uid: UUID):
         return self.service.get_product_by_uid(uid=uid)
 
     @put(
         "/{uid}",
-        response=ProductResponseSchema,
+        response=ProductDetailResponseSchema,
         auth=AuthBear(),
         permissions=[IsAdmin()],
     )
-    def update(self, uid: UUID, payload: ProductRequestSchema):
-        return self.service.update(uid=uid, payload=payload)
+    def update_product(self, uid: UUID, payload: ProductUpdateSchema):
+        return self.service.update_product(uid=uid, payload=payload)
 
     @put(
         "/{uid}/on-off",
@@ -110,9 +113,9 @@ class ProductController(Controller):
         return DeleteProductResponseSchema(success=success)
 
     @get("/{uid}/print-qrcode", auth=AuthBear(), permissions=[IsAdmin()])
-    def print_qrcode(self, uid: UUID, number_qrcode: int):
+    def print_qrcode(self, uid: UUID, payload: PrintQRCodeRequestSchema):
         verify_codes = self.verify_code_service.generate_multiple_verify_qr_codes(
-            uid=uid, quantity=number_qrcode
+            uid=uid, quantity=payload.quantity
         )
         return generate_qrcode_pdf(verify_codes)
 
@@ -134,9 +137,15 @@ class BrandController(Controller):
     def get_brand(self, uid: UUID):
         return self.service.get_brand_by_uid(uid=uid)
 
-    @delete("/{uid}")
+    @delete(
+        "/{uid}",
+        response=DeleteBrandResponseSchema,
+        auth=AuthBear(),
+        permissions=[IsAdmin()],
+    )
     def delete_brand(self, uid: UUID):
-        self.service.delete_brand(uid=uid)
+        success = self.service.delete_brand(uid=uid)
+        return DeleteBrandResponseSchema(success=success)
 
 
 @api(prefix_or_class="verifycodes", tags=["Verify Code"], auth=None)
@@ -151,3 +160,12 @@ class VerifyCodeController(Controller):
 
         html = Template(VERIFY_QR_TEMPLATE).render(Context(result))
         return HttpResponse(html, content_type="text/html")
+
+    @get(
+        "/{code}/locations",
+        response=List[VerifierLocationResponseSchema],
+        auth=AuthBear(),
+        permissions=[IsAdmin()],
+    )
+    def get_verifier_location_by_code(self, code: str):
+        return self.service.get_verifier_location_by_code(code=code)

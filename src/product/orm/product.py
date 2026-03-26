@@ -82,7 +82,7 @@ class ProductORM:
                         )
                     )
                     .order_by("-created_at"),
-                    to_attr="review_list",
+                    to_attr="reviews",
                 ),
             )
             .first()
@@ -114,7 +114,7 @@ class ProductORM:
                         )
                     )
                     .order_by("-created_at"),
-                    to_attr="review_list",
+                    to_attr="reviews",
                 ),
             )
             .first()
@@ -122,7 +122,19 @@ class ProductORM:
 
     @staticmethod
     def get_products_by_codes(codes: list[str]):
-        return Product.objects.filter(code__in=codes)
+        return (
+            Product.objects.filter(code__in=codes)
+            .select_related("brand")
+            .prefetch_related(
+                Prefetch(
+                    "product_images",
+                    queryset=ProductImage.objects.select_related("attachment").order_by(
+                        "sort_order", "created_at"
+                    ),
+                    to_attr="images",
+                )
+            )
+        )
 
     @staticmethod
     def update_product(product: Product, **product_info) -> Product:
@@ -142,8 +154,9 @@ class ProductORM:
         return product
 
     @staticmethod
-    def hard_delete_product(product: Product) -> None:
+    def hard_delete_product(product: Product) -> bool:
         product.delete()
+        return True
 
     @staticmethod
     def create_brand(name: str) -> Brand:
@@ -172,8 +185,9 @@ class ProductORM:
         return brand
 
     @staticmethod
-    def delete_brand(brand: Brand):
+    def delete_brand(brand: Brand) -> bool:
         brand.delete()
+        return True
 
     @staticmethod
     def create_product_image(

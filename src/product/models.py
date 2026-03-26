@@ -112,25 +112,19 @@ class VerifierLocation(models.Model):
 
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     isp = models.CharField(max_length=255, null=True, blank=True)
-
     country = models.CharField(max_length=100, null=True, blank=True)
     country_code = models.CharField(max_length=10, null=True, blank=True)
-
     region = models.CharField(max_length=100, null=True, blank=True)
     region_name = models.CharField(max_length=100, null=True, blank=True)
-
     city = models.CharField(max_length=100, null=True, blank=True)
     zip_code = models.CharField(max_length=20, null=True, blank=True)
-
     latitude = models.DecimalField(
         max_digits=9, decimal_places=6, null=True, blank=True
     )
     longitude = models.DecimalField(
         max_digits=9, decimal_places=6, null=True, blank=True
     )
-
     timezone = models.CharField(max_length=100, null=True, blank=True)
-
     scanned_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

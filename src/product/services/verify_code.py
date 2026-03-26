@@ -12,7 +12,7 @@ from product.orm.verify_code import VerifyCodeORM
 from product.utils import generate_qr_image, get_ip_location
 from attachment.services import AttachmentService
 from attachment.models import AttachmentType
-from product.schemas import VerifierLocationSchema
+from product.schemas import VerifierLocationRequestSchema
 
 
 class VerifyCodeService:
@@ -57,7 +57,7 @@ class VerifyCodeService:
 
         return verify_codes
 
-    def create_verifier_location(self, payload: VerifierLocationSchema):
+    def create_verifier_location(self, payload: VerifierLocationRequestSchema):
         verifier_location_info = payload.dict()
         verify_code_uid = verifier_location_info.pop("verify_code_uid")
         verify_code = self.orm.get_verify_code_by_uid(uid=verify_code_uid)
@@ -66,6 +66,9 @@ class VerifyCodeService:
         return self.orm.create_verifier_location(
             verify_code=verify_code, **verifier_location_info
         )
+
+    def get_verifier_location_by_code(self, code: str):
+        return self.get_verifier_location_by_code(code=code)
 
     def verify_qrcode(self, code: str, client_ip: str):
         verify_code = self.orm.get_verify_code_by_code(code=code)
