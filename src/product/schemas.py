@@ -43,7 +43,7 @@ class ProductRequestSchema(ModelSchema):
         exclude = ["uid", "brand", "is_deleted", "created_at", "updated_at"]
 
 
-class ProductUpdateSchema(ModelSchema):
+class ProductUpdateSchema(Schema):
     name: Optional[str] = None
     type: Optional[str] = None
     origin_price: Optional[int] = None
