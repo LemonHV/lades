@@ -1,7 +1,9 @@
+from uuid import uuid4
+
 from django.db import models
+
 from account.models import User
 from chat.utils import MessageType, NotificationType
-from uuid import uuid4
 
 
 class Conversation(models.Model):

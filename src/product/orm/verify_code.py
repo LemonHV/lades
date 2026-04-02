@@ -1,8 +1,10 @@
 from uuid import UUID
-from product.models import Product, VerifyCode, VerifierLocation
-from attachment.models import Attachment
-from product.schemas import ProductInfoSchema
+
 from django.db.models import Prefetch
+
+from attachment.models import Attachment
+from product.models import Product, VerifierLocation, VerifyCode
+from product.schemas import ProductInfoSchema
 
 
 class VerifyCodeORM:

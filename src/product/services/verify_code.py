@@ -1,7 +1,10 @@
 import os
 import secrets
 from uuid import UUID
+
 from account.exceptions import BackendURLNotConfigured
+from attachment.models import AttachmentType
+from attachment.services import AttachmentService
 from product.exceptions import (
     ProductDoesNotExists,
     QuantityQRCodeInvalid,
@@ -9,10 +12,8 @@ from product.exceptions import (
 )
 from product.orm.product import ProductORM
 from product.orm.verify_code import VerifyCodeORM
-from product.utils import generate_qr_image, get_ip_location
-from attachment.services import AttachmentService
-from attachment.models import AttachmentType
 from product.schemas import VerifierLocationRequestSchema
+from product.utils import generate_qr_image, get_ip_location
 
 
 class VerifyCodeService:

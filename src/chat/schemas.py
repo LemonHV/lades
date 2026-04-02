@@ -1,7 +1,10 @@
-from ninja import ModelSchema, Schema
-from chat.models import Message, Notification, Conversation
-from uuid import UUID
 from datetime import datetime
+from uuid import UUID
+
+from ninja import ModelSchema, Schema
+
+from chat.models import Conversation, Message, Notification
+
 
 class MessageSchema(ModelSchema):
     sender_uid: str

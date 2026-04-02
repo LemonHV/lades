@@ -1,22 +1,23 @@
-import string
-import random
 import os
-from reportlab.platypus import Paragraph
-from reportlab.pdfgen import canvas
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfbase import pdfmetrics
-from reportlab.lib.utils import ImageReader
-from reportlab.lib.units import mm
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.pagesizes import A6
-from reportlab.graphics.barcode import code128
-from io import BytesIO
+import random
+import string
 from enum import unique
-from django.utils import timezone
-from django.http import HttpResponse
-from django.db.models import TextChoices
-from django.core.mail import send_mail
+from io import BytesIO
 from urllib.parse import urlencode
+
+from django.core.mail import send_mail
+from django.db.models import TextChoices
+from django.http import HttpResponse
+from django.utils import timezone
+from reportlab.graphics.barcode import code128
+from reportlab.lib.pagesizes import A6
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import mm
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfgen import canvas
+from reportlab.platypus import Paragraph
 
 
 @unique

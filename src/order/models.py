@@ -1,9 +1,11 @@
 import uuid
+
 from django.db import models
-from product.models import Product
-from account.models import User
 from django.utils.timezone import now
+
+from account.models import User
 from order.utils import OrderStatus, PaymentStatus
+from product.models import Product
 
 
 class Payment(models.Model):

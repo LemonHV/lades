@@ -13,6 +13,7 @@ from reportlab.lib.units import mm
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 
+
 PRODUCT_HEADERS = [
     "Tên sản phẩm",
     "Mã sản phẩm",

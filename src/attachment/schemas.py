@@ -1,6 +1,7 @@
 from ninja import ModelSchema
-from attachment.models import Attachment
 from pydantic import ConfigDict
+
+from attachment.models import Attachment
 
 
 class AttachmentSchema(ModelSchema):

@@ -7,9 +7,9 @@ from django.conf import settings
 from jwt import decode as jwt_decode
 
 from account.models import User
-from product.models import Product
 from chat.services import ChatService
 from chat.utils import MessageType
+from product.models import Product
 
 
 async def get_user_from_token(token):

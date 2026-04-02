@@ -1,29 +1,31 @@
-from uuid import UUID
 import os
-from product.models import Product, ProductImage
-from product.exceptions import ProductDoesNotExists, ProductOutOfStock
+from uuid import UUID
+
+from django.db import transaction
+from django.db.models import Prefetch
+from django.utils.timezone import now
+
+from account.models import ShippingInfo, User
+from cart.models import CartItem
+from order.exceptions import (
+    DiscountDoesNotExists,
+    OrderDoesNotExists,
+    ShippingInfoDoesNotExists,
+)
+from order.models import Discount, Order, OrderItem, Payment
+from order.schemas import (
+    DiscountRequestSchema,
+    OrderRequestSchema,
+    UpdateOrderStatusSchema,
+)
 from order.utils import (
+    build_sepay_qr_url,
     generate_code,
     generate_order_bill,
     send_order_confirmation_email,
-    build_sepay_qr_url,
 )
-from order.schemas import (
-    OrderRequestSchema,
-    DiscountRequestSchema,
-    UpdateOrderStatusSchema,
-)
-from order.models import Order, OrderItem, Discount, Payment
-from django.utils.timezone import now
-from django.db import transaction
-from django.db.models import Prefetch
-from cart.models import CartItem
-from account.models import User, ShippingInfo
-from order.exceptions import (
-    ShippingInfoDoesNotExists,
-    OrderDoesNotExists,
-    DiscountDoesNotExists,
-)
+from product.exceptions import ProductDoesNotExists, ProductOutOfStock
+from product.models import Product, ProductImage
 
 
 class OrderORM:

@@ -1,7 +1,7 @@
-from chat.orm.chat import ChatORM
-from chat.orm.notification import NotificationORM
 from account.models import User
 from chat.models import Conversation
+from chat.orm.chat import ChatORM
+from chat.orm.notification import NotificationORM
 from chat.utils import MessageType, NotificationType
 
 

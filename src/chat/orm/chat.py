@@ -1,8 +1,9 @@
-from chat.models import Conversation, Message
+import secrets
+
 from account.models import User
+from chat.models import Conversation, Message
 from chat.utils import MessageType
 from product.utils import upload_file
-import secrets
 
 
 class ChatORM:

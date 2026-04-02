@@ -1,10 +1,12 @@
-from ninja import Schema, ModelSchema
-from typing import Literal, Optional, List
+from typing import List, Literal, Optional
 from uuid import UUID
-from pydantic import model_validator, ConfigDict
+
+from ninja import ModelSchema, Schema
+from pydantic import ConfigDict, model_validator
+
 from order.models import Order, OrderItem, Payment
-from product.schemas import ProductResponseSchema
 from order.utils import OrderStatus
+from product.schemas import ProductResponseSchema
 
 
 class BuyNowItemSchema(Schema):

@@ -1,10 +1,12 @@
+from typing import List, Optional
 from uuid import UUID
+
 from django.db import transaction
 from django.db.models import Prefetch, Q, QuerySet
-from typing import List, Optional
-from product.models import Brand, Product, ProductImage, Review, ReviewAttachment
+
 from account.models import User
 from attachment.models import Attachment
+from product.models import Brand, Product, ProductImage, Review, ReviewAttachment
 from product.schemas import (
     SearchFilterSortSchema,
 )

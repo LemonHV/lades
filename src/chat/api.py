@@ -1,7 +1,12 @@
 from pydantic import BaseModel
 
 from account.models import User
-from chat.schemas import MessageSchema, NotificationSchema, UploadImageResponseSchema, ConversationSchema
+from chat.schemas import (
+    ConversationSchema,
+    MessageSchema,
+    NotificationSchema,
+    UploadImageResponseSchema,
+)
 from chat.services import ChatService, NotificationService
 from chat.utils import MessageType
 from router.authenticate import AuthBear

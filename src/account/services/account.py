@@ -1,5 +1,7 @@
 import os
+
 import requests
+
 from account.exceptions import (
     BackendURLNotConfigured,
     EmailAlreadyExists,
@@ -7,15 +9,15 @@ from account.exceptions import (
     EmailRequired,
     GoogleClientIDNotConfigured,
     InvalidOrExpiredToken,
+    OldPasswordInvalid,
     PasswordInvalid,
     PasswordRequired,
     UserNotActive,
-    OldPasswordInvalid,
 )
 from account.models import User
 from account.orm.account import AccountORM
-from account.utils import get_key, send_verify_email
 from account.schemas.account import LoginResponseSchema, UpdateUserInfoSchema
+from account.utils import get_key, send_verify_email
 
 
 class AccountService:

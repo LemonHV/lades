@@ -1,6 +1,8 @@
-from uuid import UUID
-from django.utils.timezone import now
 from typing import Optional
+from uuid import UUID
+
+from django.utils.timezone import now
+
 from account.models import AuthenticateToken, User
 
 

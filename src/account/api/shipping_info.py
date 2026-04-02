@@ -8,10 +8,10 @@ from account.schemas.shipping_info import (
     ShippingInfoUpdateSchema,
 )
 from account.services.shipping_info import ShippingInfoService
-from utils.success_message import SuccessMessage
 from router.authenticate import AuthBear
 from router.controller import Controller, api, delete, get, post, put
 from router.types import AuthenticatedRequest
+from utils.success_message import SuccessMessage
 
 
 @api(prefix_or_class="shipping-infos", tags=["ShippingInfo"], auth=None)

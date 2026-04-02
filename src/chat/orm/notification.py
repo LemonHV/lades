@@ -1,5 +1,5 @@
-from chat.models import Notification
 from account.models import User
+from chat.models import Notification
 from chat.utils import NotificationType
 
 

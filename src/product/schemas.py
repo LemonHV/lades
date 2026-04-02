@@ -12,8 +12,8 @@ from product.models import (
     ProductImage,
     Review,
     ReviewAttachment,
-    VerifyCode,
     VerifierLocation,
+    VerifyCode,
 )
 
 

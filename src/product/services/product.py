@@ -1,19 +1,20 @@
+from io import BytesIO
 from typing import Any
 from uuid import UUID
-from io import BytesIO
-from product.orm.product import ProductORM
-from product.schemas import ProductRequestSchema, SearchFilterSortSchema
+
+from account.models import User
+from attachment.models import AttachmentType
+from attachment.services import AttachmentService
 from product.exceptions import (
     BrandDoesNotExists,
-    ProductFileRequired,
     ProductDoesNotExists,
+    ProductFileRequired,
     ProductImageDoesNotExists,
 )
-from product.models import Product, Brand, ProductImage
-from account.models import User
+from product.models import Brand, Product, ProductImage
+from product.orm.product import ProductORM
+from product.schemas import ProductRequestSchema, SearchFilterSortSchema
 from product.utils import build_product_workbook, load_product_information
-from attachment.services import AttachmentService
-from attachment.models import AttachmentType
 
 
 class ProductService:

@@ -1,9 +1,10 @@
-from product.services.product import ProductService
-from product.services.verify_code import VerifyCodeService
-from django.template import Context, Template
-from uuid import UUID
 from typing import List
+from uuid import UUID
+
+from django.http import HttpResponse
+from django.template import Context, Template
 from ninja import Query
+
 from product.schemas import (
     BrandRequestSchema,
     BrandResponseSchema,
@@ -19,14 +20,15 @@ from product.schemas import (
     SearchFilterSortSchema,
     VerifierLocationResponseSchema,
 )
-from router.types import AuthenticatedRequest
+from product.services.product import ProductService
+from product.services.verify_code import VerifyCodeService
+from product.utils import VERIFY_QR_TEMPLATE, generate_qrcode_pdf
 from router.authenticate import AuthBear
 from router.authorize import IsAdmin
-from router.paginate import paginate
 from router.controller import Controller, api, delete, get, post, put
-from django.http import HttpResponse
-from product.utils import VERIFY_QR_TEMPLATE, generate_qrcode_pdf
 from router.middleware import get_client_ip
+from router.paginate import paginate
+from router.types import AuthenticatedRequest
 
 
 @api(prefix_or_class="products", tags=["Product"], auth=None)

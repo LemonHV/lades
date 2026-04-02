@@ -17,10 +17,10 @@ from account.schemas.account import (
 )
 from account.services import AccountService
 from account.utils import get_key
-from utils.success_message import SuccessMessage
 from router.authenticate import AuthBear
 from router.controller import Controller, api, get, post, put
 from router.types import AuthenticatedRequest
+from utils.success_message import SuccessMessage
 
 
 @api(prefix_or_class="accounts", tags=["Account"], auth=None)
