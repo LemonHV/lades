@@ -30,7 +30,7 @@ class PaymentORM:
         paid_at,
         raw_payload: dict,
     ):
-        payment.status = PaymentStatus.SUCCESS
+        payment.status = PaymentStatus.PAID
         payment.sepay_transaction_id = sepay_transaction_id
         payment.sepay_reference_code = sepay_reference_code
         payment.paid_at = paid_at
@@ -88,16 +88,16 @@ class PaymentORM:
         if payment.order.user != user:
             raise PermissionError("Bạn không có quyền truy cập payment này")
 
-        if payment.status == PaymentStatus.SUCCESS:
+        if payment.status == PaymentStatus.PAID:
             return {
-                "status": "SUCCESS",
-                "message": "Thanh toán thành công",
+                "status": "PAID",
+                "message": "Đã thanh toán thành công",
             }
 
-        if payment.status == PaymentStatus.FAILED:
+        if payment.status == PaymentStatus.UNPAID:
             return {
-                "status": "FAILED",
-                "message": "Thanh toán thất bại",
+                "status": "UNPAID",
+                "message": "Đơn hàng chưa được thanh toán",
             }
 
         return {

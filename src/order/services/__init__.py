@@ -14,7 +14,7 @@ from order.schemas import (
     OrderRequestSchema,
     UpdateOrderStatusSchema,
 )
-from order.utils import OrderStatus, PaymentStatus
+from order.utils import PaymentStatus
 
 
 class OrderService:
@@ -159,7 +159,7 @@ class PaymentService:
                 "message": f"Payment for order {order_code} not found",
             }
 
-        if payment.status == PaymentStatus.SUCCESS:
+        if payment.status == PaymentStatus.PAID:
             return {
                 "success": True,
                 "message": "Payment already paid",

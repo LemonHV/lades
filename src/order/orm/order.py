@@ -2,7 +2,7 @@ import os
 from uuid import UUID
 
 from django.db import transaction
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django.utils.timezone import now
 
 from account.models import ShippingInfo, User
@@ -12,7 +12,7 @@ from order.exceptions import (
     OrderDoesNotExists,
     ShippingInfoDoesNotExists,
 )
-from order.models import Discount, Order, OrderItem, Payment
+from order.models import Discount, Order, OrderItem, Payment, ShippingMethod
 from order.schemas import (
     DiscountRequestSchema,
     OrderRequestSchema,
@@ -43,13 +43,13 @@ class OrderORM:
             if not buy_items:
                 raise ProductDoesNotExists
         else:
-            cart_items = (
+            cart_items = list(
                 CartItem.objects.select_related("product")
                 .select_for_update()
                 .filter(cart__user=user, uid__in=payload.cart_item_uids)
             )
 
-            if not cart_items.exists():
+            if not cart_items:
                 raise ProductDoesNotExists
 
         # ================================
@@ -64,36 +64,19 @@ class OrderORM:
             raise ShippingInfoDoesNotExists
 
         # ================================
-        # 3. CREATE ORDER
+        # 3. PREPARE & LOCK PRODUCTS
         # ================================
-        order = Order.objects.create(
-            code=generate_code(),
-            order_date=now(),
-            status="PENDING",
-            shipping_fee=15000,
-            discount_amount=0,
-            total_amount=0,
-            payment_method=payload.payment_method,
-            note=payload.note or "",
-            name=shipping_info.name,
-            phone=shipping_info.phone,
-            address=shipping_info.address,
-            user=user,
-        )
-
-        # ================================
-        # 4. CREATE ORDER ITEMS + HOLD STOCK
-        # ================================
-        items_total = 0
-
         if payload.source == "buy_now":
             product_uids = [item.product_uid for item in buy_items]
+        else:
+            product_uids = [cart_item.product.uid for cart_item in cart_items]
 
-            products = Product.objects.select_for_update().in_bulk(
-                product_uids,
-                field_name="uid",
-            )
+        products = Product.objects.select_for_update().in_bulk(
+            product_uids,
+            field_name="uid",
+        )
 
+        if payload.source == "buy_now":
             for item in buy_items:
                 product = products.get(item.product_uid)
                 if not product:
@@ -104,6 +87,41 @@ class OrderORM:
 
                 if item.quantity > product.quantity_in_stock:
                     raise ProductOutOfStock
+        else:
+            for cart_item in cart_items:
+                product = products.get(cart_item.product.uid)
+                if not product:
+                    raise ProductDoesNotExists
+
+                if cart_item.quantity <= 0:
+                    raise ProductOutOfStock
+
+                if cart_item.quantity > product.quantity_in_stock:
+                    raise ProductOutOfStock
+
+        # ================================
+        # 4. CREATE ORDER
+        # ================================
+        order = Order.objects.create(
+            code=generate_code(),
+            shipping_method=payload.shipping_method,
+            shipping_fee=ShippingMethod.get_fee(payload.shipping_method),
+            discount_amount=0,
+            total_amount=0,
+            payment_method=payload.payment_method,
+            note=payload.note,
+            name=shipping_info.name,
+            phone=shipping_info.phone,
+            address=shipping_info.address,
+            user=user,
+        )
+
+        # ================================
+        # 5. CREATE ORDER ITEMS + DEDUCT STOCK
+        # ================================
+        if payload.source == "buy_now":
+            for item in buy_items:
+                product = products[item.product_uid]
 
                 OrderItem.objects.create(
                     order=order,
@@ -114,18 +132,9 @@ class OrderORM:
 
                 product.quantity_in_stock -= item.quantity
                 product.save(update_fields=["quantity_in_stock"])
-
-                items_total += product.sale_price * item.quantity
-
         else:
             for cart_item in cart_items:
-                product = cart_item.product
-
-                if cart_item.quantity <= 0:
-                    raise ProductOutOfStock
-
-                if cart_item.quantity > product.quantity_in_stock:
-                    raise ProductOutOfStock
+                product = products[cart_item.product.uid]
 
                 OrderItem.objects.create(
                     order=order,
@@ -137,61 +146,48 @@ class OrderORM:
                 product.quantity_in_stock -= cart_item.quantity
                 product.save(update_fields=["quantity_in_stock"])
 
-                items_total += product.sale_price * cart_item.quantity
-
-            cart_items.delete()
+            CartItem.objects.filter(uid__in=[item.uid for item in cart_items]).delete()
 
         # ================================
-        # 5. APPLY DISCOUNT
+        # 6. APPLY DISCOUNT
         # ================================
-        discount_amount = 0
-
         if payload.discount_code:
-            discount = Discount.objects.filter(code=payload.discount_code).first()
-            if not discount or not discount.is_available():
+            discount = (
+                Discount.objects.select_for_update()
+                .filter(code=payload.discount_code)
+                .first()
+            )
+            if not discount:
+                raise DiscountDoesNotExists
+
+            if not discount.is_available_for_order(order):
                 raise DiscountDoesNotExists
 
             order.discount = discount
-
-            if discount.type == "percent":
-                discount_amount = items_total * discount.value // 100
-            else:
-                discount_amount = discount.value
-
-            if discount_amount < 0:
-                discount_amount = 0
-
-            if discount_amount > items_total:
-                discount_amount = items_total
+            order.discount_amount = discount.calculate_discount_amount(order.subtotal)
 
         # ================================
-        # 6. UPDATE ORDER TOTAL
+        # 7. UPDATE ORDER TOTAL
         # ================================
-        total_amount = items_total + order.shipping_fee - discount_amount
-        if total_amount < 0:
-            total_amount = 0
-
-        order.discount_amount = discount_amount
-        order.total_amount = total_amount
+        order.refresh_total_amount(save=False)
         order.save()
 
         # ================================
-        # 7. CREATE PAYMENT
+        # 8. CREATE PAYMENT
         # ================================
         payment = Payment.objects.create(
             order=order,
             method=payload.payment_method,
             amount=order.total_amount,
-            status="PENDING",
             transfer_content="",
             qr_url="",
         )
 
         # ================================
-        # 8. PAYMENT METHOD LOGIC
+        # 9. PAYMENT METHOD LOGIC
         # ================================
         if payload.payment_method == "cod":
-            pass
+            send_order_confirmation_email(order=order, email=user.email)
 
         elif payload.payment_method == "banking":
             prefix = os.environ.get("PRE_DESCRIPTION", "DH102969").strip()
@@ -202,31 +198,21 @@ class OrderORM:
                 order_code=order.code,
             )
             payment.save(update_fields=["transfer_content", "qr_url"])
-
         else:
             raise ValueError("Unsupported payment method")
 
-        # ================================
-        # 9. SEND EMAIL
-        # ================================
-        send_order_confirmation_email(order=order, email=user.email)
-
-        # ================================
-        # 10. RESPONSE
-        # ================================
         return order
 
     @staticmethod
     def update_order_status(order: Order, payload: UpdateOrderStatusSchema):
-        order.status = payload.status
-        order.save(update_fields=["status"])
+        order.set_status(payload.status)
 
     @staticmethod
     def get_order_by_uid(uid: UUID) -> Order:
         try:
             return Order.objects.prefetch_related(
                 Prefetch(
-                    "order_item",
+                    "items",
                     queryset=OrderItem.objects.select_related(
                         "product"
                     ).prefetch_related(
@@ -248,7 +234,7 @@ class OrderORM:
             Order.objects.filter(user=user)
             .prefetch_related(
                 Prefetch(
-                    "order_item",
+                    "items",
                     queryset=OrderItem.objects.select_related(
                         "product"
                     ).prefetch_related(
@@ -270,7 +256,7 @@ class OrderORM:
             Order.objects.all()
             .prefetch_related(
                 Prefetch(
-                    "order_item",
+                    "items",
                     queryset=OrderItem.objects.select_related(
                         "product"
                     ).prefetch_related(
@@ -293,23 +279,20 @@ class OrderORM:
 
     @staticmethod
     def create_discount(payload: DiscountRequestSchema):
-        discount = Discount(**payload.dict())
-        discount.save()
-        return discount
+        return Discount.objects.create(**payload.dict())
 
     @staticmethod
     def get_discount_by_uid(uid: UUID):
-        try:
-            discount = Discount.objects.get(uid=uid)
-        except Discount.DoesNotExist:
-            raise DiscountDoesNotExists
-
-        return discount
+        return Discount.objects.filter(uid=uid).first()
 
     @staticmethod
     def get_discounts():
-        discounts = Discount.objects.get(is_active=True)
-        return discounts
+        today = now()
+
+        return Discount.objects.filter(
+            Q(start_time__lte=today) | Q(start_time__isnull=True),
+            Q(end_time__gte=today) | Q(end_time__isnull=True),
+        )
 
     @staticmethod
     def update_discount(discount: Discount, payload: DiscountRequestSchema):

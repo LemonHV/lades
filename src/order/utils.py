@@ -32,9 +32,10 @@ class OrderStatus(TextChoices):
 @unique
 class PaymentStatus(TextChoices):
     PENDING = "PENDING", "Pending"
-    SUCCESS = "SUCCESS", "Success"
-    FAILED = "FAILED", "Failed"
-    CANCELLED = "CANCELLED", "Cancelled"
+    PAID = "PAID", "Paid"   
+    UNPAID = "UNPAID", "UnPaid"      
+    CANCELLED = "CANCELLED", "Cancelled"  
+    EXPIRED = "EXPIRED", "Expired"
 
 
 def generate_code(length=20):

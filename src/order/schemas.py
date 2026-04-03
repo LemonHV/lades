@@ -22,6 +22,7 @@ class OrderRequestSchema(Schema):
     shipping_info_uid: UUID
     discount_code: Optional[str] = None
     payment_method: Literal["banking", "cod"]
+    shipping_method: Literal["standard", "express", "save"] = "standard"
     note: Optional[str] = None
 
     @model_validator(mode="after")
