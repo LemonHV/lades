@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from ninja import ModelSchema, Schema
-
+from pydantic import ConfigDict
 from cart.models import CartItem
 from product.schemas import ProductResponseSchema
 
@@ -10,8 +10,10 @@ class CartItemRequestSchema(Schema):
     product_uid: UUID
     quantity: int
 
+
 class UpdateQuantityCartItemSchema(Schema):
     quantity: int
+
 
 class CartItemResponseSchema(ModelSchema):
     product: ProductResponseSchema
@@ -19,3 +21,5 @@ class CartItemResponseSchema(ModelSchema):
     class Meta:
         model = CartItem
         fields = ["uid", "quantity"]
+
+    model_config = ConfigDict(from_attributes=True)
