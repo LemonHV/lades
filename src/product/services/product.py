@@ -123,8 +123,7 @@ class ProductService:
         if not product:
             raise ProductDoesNotExists
 
-        product_images = []
-
+        product_image_uids = []
         current_count = ProductImage.count_by_product(product)
 
         for idx, image_file in enumerate(image_files, start=current_count):
@@ -134,13 +133,18 @@ class ProductService:
                 public_id=f"product_{product.uid}_{idx}",
                 type=AttachmentType.PRODUCT,
             )
+
             product_image = self.orm.create_product_image(
-                product=product, attachment=attachment, is_main=False, sort_order=idx
+                product=product,
+                attachment=attachment,
+                is_main=False,
+                sort_order=idx,
             )
+            product_image_uids.append(product_image.uid)
 
-            product_images.append(product_image)
-
-        return product_images
+        return ProductImage.objects.select_related("attachment", "product").filter(
+            uid__in=product_image_uids
+        )
 
     def delete_product_image(self, uid: UUID):
         product_image = self.orm.get_product_image_by_uid(uid=uid)
