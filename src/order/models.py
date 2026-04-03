@@ -109,7 +109,7 @@ class OrderQuerySet(models.QuerySet):
         return self.filter(status=OrderStatus.CANCELLED)
 
 
-class Order(models.Models):
+class Order(models.Model):
     uid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     code = models.CharField(max_length=20, unique=True, db_index=True)
     order_date = models.DateField(default=now)
@@ -186,7 +186,7 @@ class Order(models.Models):
         return f"Order {self.code} - {self.status}"
 
 
-class OrderItem(models.Models):
+class OrderItem(models.Model):
     uid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     order = models.ForeignKey(
         Order,
@@ -218,7 +218,7 @@ class OrderItem(models.Models):
         return f"{self.order.code} - {self.product} x {self.quantity}"
 
 
-class Payment(models.Models):
+class Payment(models.Model):
     uid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     order = models.OneToOneField(
         Order,
