@@ -77,7 +77,7 @@ class CartORM:
             .select_related("product", "product__brand")
             .prefetch_related(
                 Prefetch(
-                    "product__images",
+                    "product__product_images",
                     queryset=ProductImage.objects.select_related("attachment"),
                 )
             )
