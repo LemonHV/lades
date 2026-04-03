@@ -239,8 +239,8 @@ class OrderORM:
                         "product"
                     ).prefetch_related(
                         Prefetch(
-                            "product__image",
-                            queryset=ProductImage.objects.all(),
+                            "product__product_images",
+                            queryset=ProductImage.objects.select_related("attachment"),
                             to_attr="images",
                         )
                     ),
@@ -261,8 +261,8 @@ class OrderORM:
                         "product"
                     ).prefetch_related(
                         Prefetch(
-                            "product__image",
-                            queryset=ProductImage.objects.all(),
+                            "product__product_images",
+                            queryset=ProductImage.objects.select_related("attachment"),
                             to_attr="images",
                         )
                     ),
