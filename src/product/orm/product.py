@@ -19,9 +19,9 @@ class ProductORM:
 
     @transaction.atomic
     @staticmethod
-    def bulk_create_product(products_info: List[Product]) -> List[Product]:
-        products = [Product(**info) for info in products_info]
-        return Product.objects.bulk_create(products)
+    @transaction.atomic
+    def bulk_create_product(products: list[Product]) -> list[Product]:
+        return Product.objects.bulk_create(products, batch_size=1000)
 
     @staticmethod
     def get_products(payload: SearchFilterSortSchema) -> QuerySet[Product]:
