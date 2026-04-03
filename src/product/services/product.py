@@ -112,7 +112,7 @@ class ProductService:
                 public_id=f"product_{product.uid}_0",
                 type=AttachmentType.PRODUCT,
             )
-            self.orm.create_product_image(
+            _ = self.orm.create_product_image(
                 product=product, attachment=attachment, is_main=True, sort_order=0
             )
 

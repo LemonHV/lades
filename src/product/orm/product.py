@@ -203,7 +203,7 @@ class ProductORM:
     def create_product_image(
         product: Product, attachment: Attachment, is_main: bool, sort_order: int
     ):
-        ProductImage.objects.create(
+        return ProductImage.objects.create(
             product=product,
             attachment=attachment,
             is_main=is_main,
