@@ -17,7 +17,6 @@ class ProductORM:
     def create_product(**product_info) -> Product:
         return Product.objects.create(**product_info)
 
-    @transaction.atomic
     @staticmethod
     @transaction.atomic
     def bulk_create_product(products: list[Product]) -> list[Product]:
