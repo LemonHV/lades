@@ -246,11 +246,5 @@ class Payment(models.Model):
     class Meta:
         ordering = ["-created_at"]
 
-    def mark_as_paid(self, paid_time=None, save: bool = True) -> None:
-        self.status = PaymentStatus.PAID
-        self.paid_at = paid_time or now()
-        if save:
-            self.save(update_fields=["status", "paid_at", "updated_at"])
-
     def __str__(self):
         return f"{self.order.code} - {self.amount}"
