@@ -5,6 +5,7 @@ from django.db import transaction
 from order.exceptions import PaymentDoesNotExists
 from order.models import Order, Payment
 from order.utils import OrderStatus, PaymentStatus
+from order.utils import send_order_confirmation_email
 
 
 class PaymentORM:
@@ -75,7 +76,7 @@ class PaymentORM:
                 raw_payload=raw_payload,
             )
             PaymentORM.mark_order_confirmed(order=order)
-
+        send_order_confirmation_email(order=order, email=order.user.email)
         return payment, order
 
     @staticmethod
