@@ -22,6 +22,8 @@ from product.schemas import (
     ReviewRequestSchema,
     ReviewResponseSchema,
 )
+from ninja import File, Form
+from ninja.files import UploadedFile
 from product.services.product import ProductService
 from product.services.verify_code import VerifyCodeService
 from product.services.review import ReviewService
@@ -183,11 +185,23 @@ class ReviewController(Controller):
 
     @post("", response=ReviewResponseSchema, auth=AuthBear())
     def create_review(
-        self, request: AuthenticatedRequest, payload: ReviewRequestSchema
+        self,
+        request: AuthenticatedRequest,
+        product_uid: UUID = Form(...),
+        rating: int = Form(...),
+        comment: str | None = Form(None),
+        file: list[UploadedFile] = File(None),
     ):
-        files = request.FILES.getlist("file")
+        payload = ReviewRequestSchema(
+            product_uid=product_uid,
+            rating=rating,
+            comment=comment,
+        )
+
         return self.service.create_review(
-            user=request.user, payload=payload, files=files
+            user=request.user,
+            payload=payload,
+            files=file or [],
         )
 
     @get("/product/{uid}", response=List[ReviewResponseSchema])
