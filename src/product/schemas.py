@@ -147,11 +147,6 @@ class ProductInfoSchema(Schema):
     description: str
 
 
-class PrintQRCodeRequestSchema(Schema):
-    quantity: int
-    max_scan: Optional[int]
-
-
 class VerifyCodeResponseSchema(ModelSchema):
     class Meta:
         model = VerifyCode

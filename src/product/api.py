@@ -120,9 +120,10 @@ class ProductController(Controller):
         return DeleteProductResponseSchema(success=success)
 
     @get("/{uid}/print-qrcode", auth=AuthBear(), permissions=[IsAdmin()])
-    def print_qrcode(self, uid: UUID, payload: PrintQRCodeRequestSchema):
+    def print_qrcode(self, uid: UUID, quantity: int):
         verify_codes = self.verify_code_service.generate_multiple_verify_qr_codes(
-            uid=uid, quantity=payload.quantity
+            uid=uid,
+            quantity=quantity,
         )
         return generate_qrcode_pdf(verify_codes)
 

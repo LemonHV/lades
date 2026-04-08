@@ -4,6 +4,7 @@ from attachment.models import Attachment
 from uuid import UUID
 from django.db.models import Prefetch
 
+
 class ReviewORM:
     @staticmethod
     def create_review(
@@ -21,10 +22,13 @@ class ReviewORM:
         return Review.objects.get(uid=uid)
 
     @staticmethod
-    def create_review_attachment(review: Review, attachment: Attachment):
+    def create_review_attachment(
+        review: Review, attachment: Attachment, sort_order: int
+    ) -> ReviewAttachment:
         return ReviewAttachment.objects.create(
             review=review,
             attachment=attachment,
+            sort_order=sort_order,
         )
 
     @staticmethod
