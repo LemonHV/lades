@@ -40,7 +40,6 @@ class ReviewService:
                 review=review,
                 attachment=attachment,
                 sort_order=index,
-                is_primary=(index == 0),
             )
 
             attachments.append(review_attachment)
