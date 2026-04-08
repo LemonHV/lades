@@ -4,6 +4,7 @@ from django.db import models
 
 from account.models import User
 from attachment.models import Attachment
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class Brand(models.Model):
@@ -79,7 +80,6 @@ class VerifyCode(models.Model):
         to=Product,
         on_delete=models.CASCADE,
         related_name="verify_code",
-        to_field="uid",
         db_index=True,
         null=False,
         blank=False,
@@ -103,8 +103,6 @@ class VerifierLocation(models.Model):
         to=VerifyCode,
         on_delete=models.CASCADE,
         related_name="locations",
-        to_field="uid",
-        db_constraint=True,
         db_index=True,
         null=False,
         blank=False,
@@ -140,23 +138,17 @@ class Review(models.Model):
         to=Product,
         on_delete=models.CASCADE,
         related_name="reviews",
-        to_field="uid",
-        db_constraint=True,
         db_index=True,
-        null=False,
-        blank=False,
     )
     user = models.ForeignKey(
         to=User,
         on_delete=models.CASCADE,
         related_name="reviews",
-        to_field="uid",
-        db_constraint=True,
         db_index=True,
-        null=False,
-        blank=False,
     )
-    rating = models.IntegerField(null=False, blank=False)
+    rating = models.PositiveSmallIntegerField(
+        null=False, blank=False, validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
     comment = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -180,24 +172,15 @@ class ReviewAttachment(models.Model):
         to=Review,
         on_delete=models.CASCADE,
         related_name="review_attachments",
-        to_field="uid",
-        db_constraint=True,
         db_index=True,
-        null=False,
-        blank=False,
     )
     attachment = models.ForeignKey(
         to=Attachment,
         on_delete=models.CASCADE,
         related_name="review_attachment",
-        to_field="uid",
-        db_constraint=True,
         db_index=True,
-        null=False,
-        blank=False,
     )
     sort_order = models.PositiveIntegerField(default=0)
-    is_primary = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

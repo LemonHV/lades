@@ -274,7 +274,7 @@ class OrderORM:
 
     @staticmethod
     def print_order(order: Order):
-        order_items = order.order_item.select_related("product").all()
+        order_items = order.items.select_related("product").all()
         return generate_order_bill(order=order, order_items=order_items)
 
     @staticmethod

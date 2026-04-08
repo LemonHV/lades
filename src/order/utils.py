@@ -292,7 +292,7 @@ def send_order_confirmation_email(order, email, link=None):
 
     # Build danh sách sản phẩm thành HTML table đẹp
     items_html = ""
-    for item in getattr(order, "order_items", order.order_item.all()):
+    for item in getattr(order, "order_items", order.items.all()):
         items_html += f"""
             <tr>
                 <td style="padding:6px 8px; border:1px solid #ddd; font-size:14px; max-width:250px; word-break:break-word;">{item.product.name}</td>
