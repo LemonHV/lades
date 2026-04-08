@@ -79,14 +79,10 @@ class PaymentService:
         if not content:
             return None
 
-        # Nếu content bắt đầu bằng prefix cố định của SePay
-        # thì phần phía sau mới là mã đơn thật
         if prefix_code and content.startswith(prefix_code):
-            real_order_code = content[len(prefix_code) :].strip()
-            return real_order_code or None
+            content = content[len(prefix_code) :].strip()
 
-        # fallback nếu không có prefix
-        return content
+        return content.split()[0] if content else None
 
     @staticmethod
     def _parse_transaction_datetime(value: str | None):
