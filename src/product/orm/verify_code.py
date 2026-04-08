@@ -20,12 +20,7 @@ class VerifyCodeORM:
 
     @staticmethod
     def get_verify_code_by_code(code: str):
-        return (
-            VerifyCode.objects.select_for_update()
-            .select_related("product")
-            .filter(code=code)
-            .first()
-        )
+        return VerifyCode.objects.select_related("product").filter(code=code).first()
 
     @staticmethod
     def get_product_info(uid: UUID) -> ProductInfoSchema:
