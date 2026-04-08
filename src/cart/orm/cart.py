@@ -79,6 +79,7 @@ class CartORM:
                 Prefetch(
                     "product__product_images",
                     queryset=ProductImage.objects.select_related("attachment"),
+                    to_attr="images"
                 )
             )
         )
