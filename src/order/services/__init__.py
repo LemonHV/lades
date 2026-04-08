@@ -110,7 +110,7 @@ class PaymentService:
                 "message": "Transaction already processed",
             }
 
-        order_code = str(payload.content or "").strip().upper()[:8]
+        order_code = str(payload.content or "").strip().upper()[8:]
         if not order_code:
             return {
                 "success": True,
