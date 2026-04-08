@@ -13,6 +13,7 @@ from order.schemas import (
     DiscountRequestSchema,
     OrderRequestSchema,
     UpdateOrderStatusSchema,
+    SePayWebhookSchema,
 )
 from order.utils import PaymentStatus
 
@@ -66,25 +67,6 @@ class PaymentService:
         self.orm = PaymentORM()
 
     @staticmethod
-    def _normalize_text(text: str | None) -> str:
-        if not text:
-            return ""
-        return " ".join(text.strip().upper().split())
-
-    @staticmethod
-    def _extract_order_code(payload) -> str | None:
-        prefix_code = str(getattr(payload, "code", "") or "").strip().upper()
-        content = str(getattr(payload, "content", "") or "").strip().upper()
-
-        if not content:
-            return None
-
-        if prefix_code and content.startswith(prefix_code):
-            content = content[len(prefix_code) :].strip()
-
-        return content.split()[0] if content else None
-
-    @staticmethod
     def _parse_transaction_datetime(value: str | None):
         if not value:
             return timezone.now()
@@ -112,29 +94,23 @@ class PaymentService:
             return payload.dict()
         return dict(payload)
 
-    def handle_sepay_webhook(self, payload):
+    def handle_sepay_webhook(self, payload: SePayWebhookSchema):
         raw_payload = self._payload_to_dict(payload)
 
-        transfer_type = str(getattr(payload, "transferType", "") or "").lower()
-        transaction_id = getattr(payload, "id", None)
-        transfer_amount = getattr(payload, "transferAmount", 0)
-        transaction_date = getattr(payload, "transactionDate", None)
-        reference_code = getattr(payload, "referenceCode", None)
-
-        if transfer_type != "in":
+        if str(payload.transferType).lower() != "in":
             return {
                 "success": True,
                 "message": "Ignore outgoing transaction",
             }
 
-        existed_payment = self.orm.get_payment_by_sepay_transaction_id(transaction_id)
+        existed_payment = self.orm.get_payment_by_sepay_transaction_id(payload.id)
         if existed_payment:
             return {
                 "success": True,
                 "message": "Transaction already processed",
             }
 
-        order_code = self._extract_order_code(payload)
+        order_code = str(payload.content or "").strip().upper()[:8]
         if not order_code:
             return {
                 "success": True,
@@ -161,19 +137,19 @@ class PaymentService:
                 "message": "Payment already paid",
             }
 
-        if int(payment.amount) != int(transfer_amount):
+        if int(payment.amount) != int(payload.transferAmount):
             return {
                 "success": False,
-                "message": f"Amount mismatch: db={payment.amount}, webhook={transfer_amount}",
+                "message": f"Amount mismatch: db={payment.amount}, webhook={payload.transferAmount}",
             }
 
-        paid_at = self._parse_transaction_datetime(transaction_date)
+        paid_at = self._parse_transaction_datetime(payload.transactionDate)
 
         self.orm.mark_payment_and_order_paid(
             payment=payment,
             order=order,
-            sepay_transaction_id=transaction_id,
-            sepay_reference_code=reference_code,
+            sepay_transaction_id=payload.id,
+            sepay_reference_code=payload.referenceCode,
             paid_at=paid_at,
             raw_payload=raw_payload,
         )
