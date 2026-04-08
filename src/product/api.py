@@ -11,7 +11,6 @@ from product.schemas import (
     DeleteBrandResponseSchema,
     DeleteProductResponseSchema,
     OnOffResponseSchema,
-    PrintQRCodeRequestSchema,
     ProductDetailResponseSchema,
     ProductImageResponseSchema,
     ProductRequestSchema,
