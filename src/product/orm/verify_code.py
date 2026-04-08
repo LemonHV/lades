@@ -40,3 +40,4 @@ class VerifyCodeORM:
     def increase_scan_count(verify_code: VerifyCode):
         verify_code.scan_count += 1
         verify_code.save(update_fields=["scan_count"])
+        return verify_code
