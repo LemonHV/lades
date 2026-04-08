@@ -1,6 +1,6 @@
 from typing import List, Literal, Optional
 from uuid import UUID
-
+from datetime import date
 from ninja import ModelSchema, Schema
 from pydantic import ConfigDict, model_validator
 
@@ -83,8 +83,8 @@ class DiscountRequestSchema(Schema):
     code: str
     type: Literal["percentage", "fixed_amount"]
     value: int
-    start_time: Optional[str] = None
-    end_time: Optional[str] = None
+    start_time: Optional[date] = None
+    end_time: Optional[date] = None
     min_order_amount: Optional[int] = None
     max_usage: Optional[int] = None
 
@@ -95,8 +95,8 @@ class DiscountResponseSchema(Schema):
     code: str
     type: Literal["percentage", "fixed_amount"]
     value: int
-    start_time: Optional[str] = None
-    end_time: Optional[str] = None
+    start_time: Optional[date] = None
+    end_time: Optional[date] = None
     min_order_amount: Optional[int] = None
     max_usage: Optional[int] = None
 
