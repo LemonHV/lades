@@ -140,10 +140,10 @@ def generate_qrcode_pdf(verify_codes):
     count = 0
 
     for vc in verify_codes:
-        if not vc.qr_url:
+        if not vc.attachment.url:
             continue
 
-        r = requests.get(vc.qr_url, timeout=10)
+        r = requests.get(vc.attachment.url, timeout=10)
         if r.status_code != 200:
             continue
 
