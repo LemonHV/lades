@@ -61,15 +61,19 @@ class VerifyCodeService:
     def create_verifier_location(self, payload: VerifierLocationRequestSchema):
         verifier_location_info = payload.dict()
         verify_code_uid = verifier_location_info.pop("verify_code_uid")
+
         verify_code = self.orm.get_verify_code_by_uid(uid=verify_code_uid)
         if not verify_code:
-            return VerifyCodeDoesNotExists
+            raise VerifyCodeDoesNotExists
+
         return self.orm.create_verifier_location(
-            verify_code=verify_code, **verifier_location_info
+            verify_code=verify_code,
+            **verifier_location_info,
         )
 
     def get_verifier_location_by_code(self, code: str):
-        return self.get_verifier_location_by_code(code=code)
+        return self.orm.get_verifier_location_by_code(code=code)
+
 
     def verify_qrcode(self, code: str, client_ip: str):
         verify_code = self.orm.get_verify_code_by_code(code=code)
@@ -81,11 +85,23 @@ class VerifyCodeService:
                 "scan_count": 0,
             }
 
-        verifier_location_info = get_ip_location(client_ip) or {}
-        self.orm.create_verifier_location(
+        location_info = get_ip_location(client_ip) or {}
+
+        payload = VerifierLocationRequestSchema(
             verify_code_uid=verify_code.uid,
-            **verifier_location_info,
+            ip_address=client_ip,
+            isp=location_info.get("isp"),
+            country=location_info.get("country"),
+            country_code=location_info.get("country_code"),
+            region=location_info.get("region"),
+            region_name=location_info.get("region_name"),
+            city=location_info.get("city"),
+            zip_code=location_info.get("zip_code"),
+            latitude=location_info.get("latitude"),
+            longitude=location_info.get("longitude"),
+            timezone=location_info.get("timezone"),
         )
+        self.create_verifier_location(payload=payload)
 
         product_info = self.orm.get_product_info(uid=verify_code.product.uid)
 
