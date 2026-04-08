@@ -1,8 +1,5 @@
 from .product import ProductService
 from .verify_code import VerifyCodeService
+from .review import ReviewService
 
-
-# from .review import ReviewService
-
-
-__all__ = ["ProductService", "VerifyCodeService"]
+__all__ = ["ProductService", "VerifyCodeService", "ReviewService"]

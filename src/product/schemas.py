@@ -183,3 +183,19 @@ class VerifierLocationRequestSchema(Schema):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     timezone: Optional[str] = None
+
+
+class ReviewRequestSchema(Schema):
+    product_uid: UUID
+    rating: int
+    comment: Optional[str] = None
+    
+class ReviewResponseSchema(ModelSchema):
+    user: UserResponseSchema
+    images: List[ReviewAttachmentResponseSchema] = Field(default_factory=list)
+
+    class Meta:
+        model = Review
+        exclude = ["updated_at"]
+
+    model_config = ConfigDict(from_attributes=True)

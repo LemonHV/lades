@@ -7,6 +7,7 @@
     "order",
     "discount",
     "chat",
-    "attachment"
+    "attachment",
+    "review"
   ]
 }

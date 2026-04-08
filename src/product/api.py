@@ -19,9 +19,12 @@ from product.schemas import (
     ProductUpdateSchema,
     SearchFilterSortSchema,
     VerifierLocationResponseSchema,
+    ReviewRequestSchema,
+    ReviewResponseSchema,
 )
 from product.services.product import ProductService
 from product.services.verify_code import VerifyCodeService
+from product.services.review import ReviewService
 from product.utils import VERIFY_QR_TEMPLATE, generate_qrcode_pdf
 from router.authenticate import AuthBear
 from router.authorize import IsAdmin
@@ -171,3 +174,24 @@ class VerifyCodeController(Controller):
     )
     def get_verifier_location_by_code(self, code: str):
         return self.service.get_verifier_location_by_code(code=code)
+
+
+@api(prefix_or_class="reviews", tags=["Review"], auth=None)
+class ReviewController(Controller):
+    def __init__(self) -> None:
+        self.service = ReviewService()
+
+    @post("", response=ReviewResponseSchema, auth=AuthBear())
+    def create_review(
+        self, request: AuthenticatedRequest, payload: ReviewRequestSchema
+    ):
+        return self.service.create_review(user=request.user, payload=payload)
+
+    @post("/{uid}/attachments", auth=AuthBear())
+    def create_review_attachment(self, request: AuthenticatedRequest, uid: UUID):
+        files = request.FILES.getlist("file")
+        self.service.create_review_attachments(uid=uid, files=files)
+
+    @get("/product/{uid}", response=List[ReviewResponseSchema])
+    def get_reviews(self, uid: UUID):
+        return self.service.get_reviews(uid=uid)
