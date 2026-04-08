@@ -160,7 +160,7 @@ class VerifyCodeController(Controller):
     def __init__(self) -> None:
         self.service = VerifyCodeService()
 
-    @get("/verify-qrcode")
+    @get("/verify-qrcode/{code}")
     def verify_qrcode(self, request, code: str):
         client_ip = get_client_ip(request)
         result = self.service.verify_qrcode(code=code, client_ip=client_ip)
