@@ -15,9 +15,9 @@ class DiscountType(models.TextChoices):
 
 
 class ShippingMethod(models.TextChoices):
-    STANDARD = "standard", "Standard Shipping"
-    EXPRESS = "express", "Express Shipping"
-    SAVE = "save", "Save Shipping"
+    STANDARD = "standard", "Giao thường"
+    EXPRESS = "express", "Hỏa tốc"
+    SAVE = "save", "Tiết kiệm"
 
     @classmethod
     def get_fee(cls, method: str) -> int:
