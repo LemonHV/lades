@@ -12,7 +12,6 @@ from product.schemas import (
     DeleteProductResponseSchema,
     OnOffResponseSchema,
     ProductDetailResponseSchema,
-    ProductImageResponseSchema,
     ProductRequestSchema,
     ProductResponseSchema,
     ProductUpdateSchema,
@@ -42,8 +41,12 @@ class ProductController(Controller):
         self.verify_code_service = VerifyCodeService()
 
     @post("", response=ProductResponseSchema, auth=AuthBear(), permissions=[IsAdmin()])
-    def create_product(self, payload: ProductRequestSchema):
-        return self.service.create_product(payload=payload)
+    def create_product(
+        self,
+        payload: ProductRequestSchema = Form(...),
+        file: list[UploadedFile] = File(None),
+    ):
+        return self.service.create_product(payload=payload, files=file or [])
 
     @get("/product-file", auth=AuthBear(), permissions=[IsAdmin()])
     def get_product_file(self):
@@ -66,16 +69,6 @@ class ProductController(Controller):
     def create_multiple_products(self, request: AuthenticatedRequest):
         product_file = request.FILES.get("file")
         return self.service.create_multiple_products(product_file=product_file)
-
-    @post(
-        "/{uid}/images",
-        response=List[ProductImageResponseSchema],
-        auth=AuthBear(),
-        permissions=[IsAdmin()],
-    )
-    def upload_images(self, request: AuthenticatedRequest, uid: UUID):
-        image_files = request.FILES.getlist("file")
-        return self.service.upload_images(uid=uid, image_files=image_files)
 
     @delete("/images/{uid}", auth=AuthBear(), permissions=[IsAdmin()])
     def delete_image(self, uid: UUID):

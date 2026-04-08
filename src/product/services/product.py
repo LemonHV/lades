@@ -22,13 +22,35 @@ class ProductService:
         self.orm = ProductORM()
         self.attachment_service = AttachmentService()
 
-    def create_product(self, payload: ProductRequestSchema):
+    def create_product(self, payload: ProductRequestSchema, files: list):
         product_info = payload.dict()
+
         brand_uid = product_info.pop("brand_uid")
         brand = self.orm.get_brand_by_uid(uid=brand_uid)
         if not brand:
             raise BrandDoesNotExists
-        return self.orm.create_product(**product_info, brand=brand)
+
+        product = self.orm.create_product(**product_info, brand=brand)
+        product_image_uids = []
+
+        for idx, file in enumerate(files):
+            attachment = self.attachment_service.upload_attachment(
+                file=file.file,
+                folder="product_images",
+                public_id=f"product_{product.uid}_{idx}",
+                type=AttachmentType.PRODUCT,
+            )
+
+            product_image = self.orm.create_product_image(
+                product=product,
+                attachment=attachment,
+                is_main=(idx == 0),
+                sort_order=idx,
+            )
+
+            product_image_uids.append(product_image.uid)
+
+        return product
 
     def get_product_file(self):
         return build_product_workbook()
@@ -117,34 +139,6 @@ class ProductService:
             )
 
         return list(all_products)
-
-    def upload_images(self, uid: UUID, image_files: list):
-        product = self.orm.get_product_by_uid(uid=uid)
-        if not product:
-            raise ProductDoesNotExists
-
-        product_image_uids = []
-        current_count = ProductImage.count_by_product(product)
-
-        for idx, image_file in enumerate(image_files, start=current_count):
-            attachment = self.attachment_service.upload_attachment(
-                file=image_file.file,
-                folder="product_images",
-                public_id=f"product_{product.uid}_{idx}",
-                type=AttachmentType.PRODUCT,
-            )
-
-            product_image = self.orm.create_product_image(
-                product=product,
-                attachment=attachment,
-                is_main=False,
-                sort_order=idx,
-            )
-            product_image_uids.append(product_image.uid)
-
-        return ProductImage.objects.select_related("attachment", "product").filter(
-            uid__in=product_image_uids
-        )
 
     def delete_product_image(self, uid: UUID):
         product_image = self.orm.get_product_image_by_uid(uid=uid)
