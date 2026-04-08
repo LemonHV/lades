@@ -185,12 +185,10 @@ class ReviewController(Controller):
     def create_review(
         self, request: AuthenticatedRequest, payload: ReviewRequestSchema
     ):
-        return self.service.create_review(user=request.user, payload=payload)
-
-    @post("/{uid}/attachments", auth=AuthBear())
-    def create_review_attachment(self, request: AuthenticatedRequest, uid: UUID):
         files = request.FILES.getlist("file")
-        self.service.create_review_attachments(uid=uid, files=files)
+        return self.service.create_review(
+            user=request.user, payload=payload, files=files
+        )
 
     @get("/product/{uid}", response=List[ReviewResponseSchema])
     def get_reviews(self, uid: UUID):

@@ -13,22 +13,26 @@ class ReviewService:
         self.product_orm = ProductORM()
         self.attachment_service = AttachmentService()
 
-    def create_review(self, user: User, payload: ReviewRequestSchema):
-        product = self.product_orm.get_product_by_uid(uid=payload.product_uid)
-        return self.orm.create_review(
-            user=user, product=product, rating=payload.rating, comment=payload.comment
-        )
+    from django.db import transaction
 
-    def create_review_attachments(self, uid: UUID, files: list):
-        review = self.orm.get_review_by_uid(uid=uid)
+    @transaction.atomic
+    def create_review(self, user: User, payload: ReviewRequestSchema, files: list):
+        product = self.product_orm.get_product_by_uid(uid=payload.product_uid)
+
+        review = self.orm.create_review(
+            user=user,
+            product=product,
+            rating=payload.rating,
+            comment=payload.comment,
+        )
 
         attachments = []
 
-        for index, file in enumerate(files):
+        for index, file in enumerate(files or []):
             attachment = self.attachment_service.upload_attachment(
                 file=file,
                 type=AttachmentType.REVIEW,
-                public_id=f"review_{uid}_{index}",
+                public_id=f"review_{review.uid}_{index}",
                 folder="review_images",
             )
 
@@ -41,7 +45,7 @@ class ReviewService:
 
             attachments.append(review_attachment)
 
-        return attachments
+        return review
 
     def get_reviews(self, uid: UUID):
         product = self.product_orm.get_product_by_uid(uid=uid)
