@@ -71,6 +71,8 @@ class APIMiddleware:
         client_ip = get_client_ip(request)
         counter = QueryCounter()
 
+        user_display = "anon"
+
         try:
             with connection.execute_wrapper(counter):
                 response = self.get_response(request)
@@ -78,40 +80,52 @@ class APIMiddleware:
             user_display = get_user_display(request)
 
         except Exception:
+            duration = time.perf_counter() - start_time
+            duration_ms = int(duration * 1000)
+
+            try:
+                user_display = get_user_display(request)
+            except Exception:
+                pass
+
             LOGGER.exception(
-                "API_ERROR method=%s path=%s ip=%s user=%s queries=%s",
+                "❌ [%s] %s %s | %dms | q=%s | user=%s | ip=%s",
+                500,
                 request.method,
                 request.path,
-                client_ip,
-                user_display,
+                duration_ms,
                 counter.count,
+                user_display,
+                client_ip,
             )
             raise
 
         duration = time.perf_counter() - start_time
+        duration_ms = int(duration * 1000)
         status_code = int(response.status_code)
+        log_msg = "[%s] %s %s | %dms | q=%s | user=%s | ip=%s"
 
         LOGGER.info(
-            "API method=%s path=%s status=%s ip=%s user=%s time=%.4fs queries=%s",
+            log_msg,
+            status_code,
             request.method,
             request.path,
-            status_code,
-            client_ip,
-            user_display,
-            duration,
+            duration_ms,
             counter.count,
+            user_display,
+            client_ip,
         )
 
         if duration > 1:
             LOGGER.warning(
-                "API_SLOW method=%s path=%s status=%s ip=%s user=%s time=%.4fs queries=%s",
+                "🐢 " + log_msg,
+                status_code,
                 request.method,
                 request.path,
-                status_code,
-                client_ip,
-                user_display,
-                duration,
+                duration_ms,
                 counter.count,
+                user_display,
+                client_ip,
             )
 
         if status_code == 404:
