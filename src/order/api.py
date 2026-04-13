@@ -1,5 +1,6 @@
 from typing import List
 from uuid import UUID
+from ninja import Query
 
 from account.schemas.account import MessageResponseSchema
 from order.schemas import (
@@ -12,11 +13,13 @@ from order.schemas import (
     SePayWebhookSchema,
     UpdateOrderStatusSchema,
     WebhookResponseSchema,
+    SearchFilterSortSchema,
 )
 from order.services import OrderService, PaymentService
 from router.authenticate import AuthBear
 from router.authorize import IsAdmin, IsUser
 from router.controller import Controller, api, get, post, put
+from router.paginate import paginate
 from router.types import AuthenticatedRequest
 from utils.success_message import SuccessMessage
 
@@ -35,12 +38,17 @@ class OrderAPI(Controller):
         self.service.update_order_status(uid=uid, payload=payload)
         return MessageResponseSchema(message=SuccessMessage.UPDATE_ORDER_STATUS_SUCCESS)
 
-    @get("", response=List[OrderResponseSchema])
-    def get_all_orders(self, request: AuthenticatedRequest):
+    @get("", response=List[OrderResponseSchema], paginate=True)
+    @paginate
+    def get_all_orders(
+        self,
+        request: AuthenticatedRequest,
+        payload: SearchFilterSortSchema = Query(...),
+    ):
         if request.user.is_staff:
-            return self.service.get_admin_orders()
+            return self.service.get_admin_orders(payload=payload)
         else:
-            return self.service.get_user_orders(user=request.user)
+            return self.service.get_user_orders(user=request.user, payload=payload)
 
     @get("/{uid}", response=OrderResponseSchema)
     def get_order_by_uid(self, uid: UUID):

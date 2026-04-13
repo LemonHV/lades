@@ -17,6 +17,7 @@ from order.schemas import (
     DiscountRequestSchema,
     OrderRequestSchema,
     UpdateOrderStatusSchema,
+    SearchFilterSortSchema,
 )
 from order.utils import (
     build_sepay_qr_url,
@@ -229,9 +230,28 @@ class OrderORM:
             raise OrderDoesNotExists
 
     @staticmethod
-    def get_user_orders(user: User):
+    def get_user_orders(user: User, payload: SearchFilterSortSchema):
+        query = Q(user=user)
+
+        if payload.status:
+            query &= Q(status=payload.status)
+
+        if payload.order_code:
+            query &= Q(code__icontains=payload.order_code.strip())
+
+        if payload.product_name:
+            query &= Q(items__product__name__icontains=payload.product_name.strip())
+
+        if payload.start_time:
+            query &= Q(order_date__gte=payload.start_time)
+
+        if payload.end_time:
+            query &= Q(order_date__lte=payload.end_time)
+
+        sort_order = "order_date" if payload.sort == "asc" else "-order_date"
+
         return (
-            Order.objects.filter(user=user)
+            Order.objects.filter(query)
             .prefetch_related(
                 Prefetch(
                     "items",
@@ -247,13 +267,33 @@ class OrderORM:
                     to_attr="order_items",
                 )
             )
-            .order_by("-order_date")
+            .distinct()
+            .order_by(sort_order)
         )
 
     @staticmethod
-    def get_admin_orders():
+    def get_admin_orders(payload: SearchFilterSortSchema):
+        query = Q()
+
+        if payload.status:
+            query &= Q(status=payload.status)
+
+        if payload.order_code:
+            query &= Q(code__icontains=payload.order_code.strip())
+
+        if payload.product_name:
+            query &= Q(items__product__name__icontains=payload.product_name.strip())
+
+        if payload.start_time:
+            query &= Q(order_date__gte=payload.start_time)
+
+        if payload.end_time:
+            query &= Q(order_date__lte=payload.end_time)
+
+        sort_order = "order_date" if payload.sort == "asc" else "-order_date"
+
         return (
-            Order.objects.all()
+            Order.objects.filter(query)
             .prefetch_related(
                 Prefetch(
                     "items",
@@ -269,7 +309,8 @@ class OrderORM:
                     to_attr="order_items",
                 )
             )
-            .order_by("-order_date")
+            .distinct()
+            .order_by(sort_order)
         )
 
     @staticmethod

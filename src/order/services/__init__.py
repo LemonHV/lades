@@ -1,4 +1,3 @@
-import re
 from datetime import datetime
 from uuid import UUID
 
@@ -14,6 +13,7 @@ from order.schemas import (
     OrderRequestSchema,
     UpdateOrderStatusSchema,
     SePayWebhookSchema,
+    SearchFilterSortSchema,
 )
 from order.utils import PaymentStatus
 
@@ -35,11 +35,11 @@ class OrderService:
     def get_order_by_uid(self, uid: UUID):
         return self.orm.get_order_by_uid(uid=uid)
 
-    def get_user_orders(self, user: User):
-        return self.orm.get_user_orders(user=user)
+    def get_user_orders(self, user: User, payload: SearchFilterSortSchema):
+        return self.orm.get_user_orders(user=user, payload=payload)
 
-    def get_admin_orders(self):
-        return self.orm.get_admin_orders()
+    def get_admin_orders(self, payload: SearchFilterSortSchema):
+        return self.orm.get_admin_orders(payload=payload)
 
     def print_order(self, uid: UUID):
         try:

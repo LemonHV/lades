@@ -1,12 +1,21 @@
 from typing import List, Literal, Optional
 from uuid import UUID
-from datetime import date
-from ninja import ModelSchema, Schema
+from datetime import date, datetime
+from ninja import ModelSchema, Schema, Query
 from pydantic import ConfigDict, model_validator
 
 from order.models import Order, OrderItem, Payment
 from order.utils import OrderStatus
 from product.schemas import ProductResponseSchema
+
+
+class SearchFilterSortSchema(Schema):
+    status: Optional[OrderStatus] = Query(None)
+    order_code: Optional[str] = Query(None)
+    product_name: Optional[str] = Query(None)
+    start_time: Optional[datetime] = Query(None)
+    end_time: Optional[datetime] = Query(None)
+    sort: str = Query("asc")
 
 
 class BuyNowItemSchema(Schema):
