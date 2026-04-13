@@ -5,7 +5,7 @@ from ninja import ModelSchema, Schema, Query
 from pydantic import ConfigDict, model_validator
 
 from order.models import Order, OrderItem, Payment
-from order.utils import OrderStatus
+from order.utils import OrderStatus, PaymentStatus
 from product.schemas import ProductResponseSchema
 
 
@@ -131,5 +131,5 @@ class WebhookResponseSchema(Schema):
 
 
 class ConfirmResponseSchema(Schema):
-    status: str
+    status: PaymentStatus
     message: str

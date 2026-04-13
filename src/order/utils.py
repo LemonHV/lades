@@ -34,8 +34,6 @@ class PaymentStatus(TextChoices):
     PENDING = "PENDING", "Pending"
     PAID = "PAID", "Paid"   
     UNPAID = "UNPAID", "UnPaid"      
-    CANCELLED = "CANCELLED", "Cancelled"  
-    EXPIRED = "EXPIRED", "Expired"
 
 
 def generate_code(length=20):
