@@ -31,3 +31,8 @@ class OrderCanNotRetryExists(APIException):
     error_code = HTTPStatus.BAD_REQUEST
     message_code = "ORDER_CAN_NOT_RETRY_EXISTS"
     message = "Không thể thanh toán lại"
+    
+class DiscountNotExistsOrExpired(APIException):
+    error_code = HTTPStatus.BAD_REQUEST
+    message_code = "DISCOUNT_NOT_EXISTS_OR_EXPIRED"
+    message = "Mã giảm giá không tồn tại hoặc đã hết hạn"

@@ -72,6 +72,10 @@ class DiscountAPI(Controller):
     def update_discount(self, uid: UUID, payload: DiscountRequestSchema):
         return self.service.update_discount(uid=uid, payload=payload)
 
+    @get("/apply/{code}", response=DiscountResponseSchema)
+    def get_discount_by_code(self, code: str):
+        return self.service.get_discount_by_code(code=code)
+
 
 @api(prefix_or_class="payments", tags=["Payment"], auth=None)
 class PaymentAPI(Controller):

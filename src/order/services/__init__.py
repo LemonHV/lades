@@ -5,7 +5,7 @@ from uuid import UUID
 from django.utils import timezone
 
 from account.models import User
-from order.exceptions import OrderDoesNotExists
+from order.exceptions import OrderDoesNotExists, DiscountNotExistsOrExpired
 from order.models import Order
 from order.orm.order import OrderORM
 from order.orm.payment import PaymentORM
@@ -60,6 +60,12 @@ class OrderService:
     def update_discount(self, uid: UUID, payload: DiscountRequestSchema):
         discount = self.orm.get_discount_by_uid(uid=uid)
         return self.orm.update_discount(discount=discount, payload=payload)
+
+    def get_discount_by_code(self, code: str):
+        discount = self.orm.get_discount_by_code(code=code)
+        if not discount:
+            raise DiscountNotExistsOrExpired
+        return discount
 
 
 class PaymentService:

@@ -300,3 +300,13 @@ class OrderORM:
             setattr(discount, field, value)
         discount.save()
         return discount
+
+    @staticmethod
+    def get_discount_by_code(code: str):
+        today = now()
+
+        return Discount.objects.filter(
+            Q(code=code),
+            Q(start_time__lte=today) | Q(start_time__isnull=True),
+            Q(end_time__gte=today) | Q(end_time__isnull=True),
+        ).first()
