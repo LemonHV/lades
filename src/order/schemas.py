@@ -1,6 +1,6 @@
 from typing import List, Literal, Optional
 from uuid import UUID
-from datetime import date, datetime
+from datetime import date
 from ninja import ModelSchema, Schema, Query
 from pydantic import ConfigDict, model_validator
 
@@ -13,8 +13,8 @@ class SearchFilterSortSchema(Schema):
     status: Optional[OrderStatus] = Query(None)
     order_code: Optional[str] = Query(None)
     product_name: Optional[str] = Query(None)
-    start_time: Optional[datetime] = Query(None)
-    end_time: Optional[datetime] = Query(None)
+    start_time: Optional[date] = Query(None)
+    end_time: Optional[date] = Query(None)
     sort: str = Query("asc")
 
 
