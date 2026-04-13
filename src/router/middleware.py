@@ -75,8 +75,9 @@ class APIMiddleware:
             with connection.execute_wrapper(counter):
                 response = self.get_response(request)
 
-        except Exception:
             user_display = get_user_display(request)
+
+        except Exception:
             LOGGER.exception(
                 "API_ERROR method=%s path=%s ip=%s user=%s queries=%s",
                 request.method,

@@ -144,7 +144,7 @@ class OrderORM:
                     quantity=cart_item.quantity,
                 )
                 if payload.payment_method == "cod":
-                    product.quantity_in_stock -= item.quantity
+                    product.quantity_in_stock -= cart_item.quantity
                     product.save(update_fields=["quantity_in_stock"])
 
             CartItem.objects.filter(uid__in=[item.uid for item in cart_items]).delete()
@@ -154,6 +154,7 @@ class OrderORM:
         # ================================
         discount = None
         discount_amount = 0
+        subtotal = sum(item.total_price for item in order.items.all())
         if payload.discount_code:
             discount = (
                 Discount.objects.select_for_update()
@@ -164,14 +165,12 @@ class OrderORM:
             if not discount:
                 raise DiscountDoesNotExists
 
-            today = now()
+            today = now().date()
 
             if (discount.start_time and discount.start_time > today) or (
                 discount.end_time and discount.end_time < today
             ):
                 raise DiscountDoesNotExists
-
-            subtotal = sum(item.total_price for item in order.items.all())
 
             if discount.min_order_amount and subtotal < discount.min_order_amount:
                 raise DiscountDoesNotExists
@@ -184,8 +183,12 @@ class OrderORM:
         # ================================
         # 7. UPDATE ORDER TOTALS
         # ================================
+        order.total_amount = subtotal + order.shipping_fee - discount_amount
         order.discount = discount
         order.discount_amount = discount_amount
+        order.save(
+            update_fields=["discount", "discount_amount", "total_amount", "updated_at"]
+        )
 
         # ================================
         # 8. CREATE PAYMENT
