@@ -257,12 +257,12 @@ class OrderORM:
             query &= Q(items__product__name__icontains=payload.product_name.strip())
 
         if payload.start_time:
-            query &= Q(order_date__gte=payload.start_time)
+            query &= Q(created_at__gte=payload.start_time)
 
         if payload.end_time:
-            query &= Q(order_date__lte=payload.end_time)
+            query &= Q(created_at__lte=payload.end_time)
 
-        sort_order = "order_date" if payload.sort == "asc" else "-order_date"
+        sort_order = "created_at" if payload.sort == "asc" else "-created_at"
 
         return (
             Order.objects.filter(query)

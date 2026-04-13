@@ -24,7 +24,9 @@ def get_client_ip(request):
 def get_user_display(request):
     user = getattr(request, "user", None)
     if user and getattr(user, "is_authenticated", False):
-        return getattr(user, "email", None) or getattr(user, "username", None) or str(user)
+        return (
+            getattr(user, "email", None) or getattr(user, "username", None) or str(user)
+        )
     return "Anonymous"
 
 
@@ -67,7 +69,6 @@ class APIMiddleware:
 
         start_time = time.perf_counter()
         client_ip = get_client_ip(request)
-        user_display = get_user_display(request)
         counter = QueryCounter()
 
         try:
@@ -75,16 +76,9 @@ class APIMiddleware:
                 response = self.get_response(request)
 
         except Exception:
+            user_display = get_user_display(request)
             LOGGER.exception(
-                "\n"
-                "❌ API EXCEPTION\n"
-                "----------------------------------------\n"
-                "Method     : %s\n"
-                "Path       : %s\n"
-                "IP         : %s\n"
-                "User       : %s\n"
-                "Queries    : %s\n"
-                "----------------------------------------",
+                "API_ERROR method=%s path=%s ip=%s user=%s queries=%s",
                 request.method,
                 request.path,
                 client_ip,
@@ -97,17 +91,7 @@ class APIMiddleware:
         status_code = int(response.status_code)
 
         LOGGER.info(
-            "\n"
-            "🚀 API REQUEST\n"
-            "----------------------------------------\n"
-            "Method     : %s\n"
-            "Path       : %s\n"
-            "Status     : %s\n"
-            "IP         : %s\n"
-            "User       : %s\n"
-            "Duration   : %.4fs\n"
-            "Queries    : %s\n"
-            "----------------------------------------",
+            "API method=%s path=%s status=%s ip=%s user=%s time=%.4fs queries=%s",
             request.method,
             request.path,
             status_code,
@@ -119,17 +103,7 @@ class APIMiddleware:
 
         if duration > 1:
             LOGGER.warning(
-                "\n"
-                "⚠️ SLOW API\n"
-                "----------------------------------------\n"
-                "Method     : %s\n"
-                "Path       : %s\n"
-                "Status     : %s\n"
-                "IP         : %s\n"
-                "User       : %s\n"
-                "Duration   : %.4fs\n"
-                "Queries    : %s\n"
-                "----------------------------------------",
+                "API_SLOW method=%s path=%s status=%s ip=%s user=%s time=%.4fs queries=%s",
                 request.method,
                 request.path,
                 status_code,
