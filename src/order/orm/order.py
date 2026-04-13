@@ -130,9 +130,9 @@ class OrderORM:
                     price=product.sale_price,
                     quantity=item.quantity,
                 )
-
-                product.quantity_in_stock -= item.quantity
-                product.save(update_fields=["quantity_in_stock"])
+                if payload.payment_method == "cod":
+                    product.quantity_in_stock -= item.quantity
+                    product.save(update_fields=["quantity_in_stock"])
         else:
             for cart_item in cart_items:
                 product = products[cart_item.product.uid]
@@ -143,35 +143,49 @@ class OrderORM:
                     price=product.sale_price,
                     quantity=cart_item.quantity,
                 )
-
-                product.quantity_in_stock -= cart_item.quantity
-                product.save(update_fields=["quantity_in_stock"])
+                if payload.payment_method == "cod":
+                    product.quantity_in_stock -= item.quantity
+                    product.save(update_fields=["quantity_in_stock"])
 
             CartItem.objects.filter(uid__in=[item.uid for item in cart_items]).delete()
 
         # ================================
         # 6. APPLY DISCOUNT
         # ================================
+        discount = None
+        discount_amount = 0
         if payload.discount_code:
             discount = (
                 Discount.objects.select_for_update()
                 .filter(code=payload.discount_code)
                 .first()
             )
+
             if not discount:
                 raise DiscountDoesNotExists
 
-            if not discount.is_available_for_order(order):
+            today = now()
+
+            if (discount.start_time and discount.start_time > today) or (
+                discount.end_time and discount.end_time < today
+            ):
                 raise DiscountDoesNotExists
 
-            order.discount = discount
-            order.discount_amount = discount.calculate_discount_amount(order.subtotal)
+            subtotal = sum(item.total_price for item in order.items.all())
+
+            if discount.min_order_amount and subtotal < discount.min_order_amount:
+                raise DiscountDoesNotExists
+
+            if discount.type == "percentage":
+                discount_amount = subtotal * discount.value // 100
+            else:
+                discount_amount = discount.value
 
         # ================================
-        # 7. UPDATE ORDER TOTAL
+        # 7. UPDATE ORDER TOTALS
         # ================================
-        order.refresh_total_amount(save=False)
-        order.save()
+        order.discount = discount
+        order.discount_amount = discount_amount
 
         # ================================
         # 8. CREATE PAYMENT

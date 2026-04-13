@@ -64,30 +64,6 @@ class Discount(models.Model):
     def usage_count(self) -> int:
         return self.orders.count()
 
-    def is_available_for_order(self, order: "Order") -> bool:
-        if not self.is_active:
-            return False
-
-        if self.max_usage is not None and self.usage_count >= self.max_usage:
-            return False
-
-        if order.subtotal < self.min_order_amount:
-            return False
-
-        return True
-
-    def calculate_discount_amount(self, amount: int) -> int:
-        if amount <= 0:
-            return 0
-
-        if self.type == DiscountType.PERCENT:
-            return int(amount * self.value / 100)
-
-        if self.type == DiscountType.FIXED:
-            return min(self.value, amount)
-
-        return 0
-
     def __str__(self):
         return f"{self.name} ({self.code})"
 
@@ -149,19 +125,6 @@ class Order(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
-
-    @property
-    def subtotal(self) -> int:
-        return sum(item.total_price for item in self.items.all())
-
-    def calculate_total(self) -> int:
-        return max(self.subtotal - (self.discount_amount or 0) + self.shipping_fee, 0)
-
-    def refresh_total_amount(self, save: bool = True) -> int:
-        self.total_amount = self.calculate_total()
-        if save:
-            self.save(update_fields=["total_amount", "updated_at"])
-        return self.total_amount
 
     def set_status(self, new_status: str, save: bool = True) -> None:
         try:

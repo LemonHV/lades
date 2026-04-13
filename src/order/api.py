@@ -38,7 +38,7 @@ class OrderAPI(Controller):
         self.service.update_order_status(uid=uid, payload=payload)
         return MessageResponseSchema(message=SuccessMessage.UPDATE_ORDER_STATUS_SUCCESS)
 
-    @get("", response=List[OrderResponseSchema], paginate=True)
+    @get("", response=OrderResponseSchema, paginate=True)
     @paginate
     def get_all_orders(
         self,
