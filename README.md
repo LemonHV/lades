@@ -52,17 +52,21 @@ It handles user authentication, product management, shopping cart operations, or
 ---
 
 ## 🏗️ Project Structure
+
+
 src/
-├── account/ # Authentication & user management
-├── attachment/ # File upload handling
-├── cart/ # Shopping cart logic
-├── chat/ # Messaging system
-├── lades/ # Django core configuration
-├── order/ # Order & payment logic
-├── product/ # Product & inventory management
-├── router/ # API routing
-├── utils/ # Shared utilities
-├── manage.py
+│
+├── account/
+├── attachment/
+├── cart/
+├── chat/
+├── lades/
+├── order/
+├── product/
+├── router/
+├── utils/
+│
+└── manage.py
 
 ---
 
