@@ -51,25 +51,6 @@ It handles user authentication, product management, shopping cart operations, or
 
 ---
 
-## 🏗️ Project Structure
-
-
-src/
-│
-├── account/
-├── attachment/
-├── cart/
-├── chat/
-├── lades/
-├── order/
-├── product/
-├── router/
-├── utils/
-│
-└── manage.py
-
----
-
 ## ⚙️ Technologies Used
 
 ### Backend
