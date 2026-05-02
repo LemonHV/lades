@@ -3,9 +3,12 @@ from uuid import UUID
 from django.db import transaction
 
 from order.exceptions import PaymentDoesNotExists
-from order.models import Order, Payment
+from order.models import Order, Payment, OrderItem
+from product.models import ProductImage
+from django.db.models import Prefetch
 from product.models import Product
 from product.exceptions import ProductDoesNotExists, ProductOutOfStock
+from order.exceptions import OrderDoesNotExists
 from order.utils import OrderStatus, PaymentStatus
 from order.utils import send_order_confirmation_email
 
@@ -19,7 +22,30 @@ class PaymentORM:
 
     @staticmethod
     def get_order_by_code(order_code: str):
-        return Order.objects.filter(code=order_code).first()
+        try:
+            return (
+                Order.objects.select_related("user")
+                .prefetch_related(
+                    Prefetch(
+                        "items",
+                        queryset=OrderItem.objects.select_related(
+                            "product"
+                        ).prefetch_related(
+                            Prefetch(
+                                "product__product_images",
+                                queryset=ProductImage.objects.select_related(
+                                    "attachment"
+                                ),
+                                to_attr="images",
+                            )
+                        ),
+                        to_attr="order_items",
+                    )
+                )
+                .get(code=order_code)
+            )
+        except Order.DoesNotExist:
+            raise OrderDoesNotExists
 
     @staticmethod
     def get_payment_by_order(order: Order):
