@@ -1,6 +1,5 @@
-from datetime import datetime
 from uuid import UUID
-
+from datetime import datetime, date, time
 from django.utils import timezone
 
 from account.models import User
@@ -73,21 +72,33 @@ class PaymentService:
         self.orm = PaymentORM()
 
     @staticmethod
-    def _parse_transaction_datetime(value: str | None):
+    def _parse_transaction_datetime(value):
         if not value:
             return timezone.now()
+
+        if isinstance(value, datetime):
+            if timezone.is_naive(value):
+                return timezone.make_aware(value, timezone.get_current_timezone())
+            return value
+
+        if isinstance(value, date):
+            dt = datetime.combine(value, time.min)
+            return timezone.make_aware(dt, timezone.get_current_timezone())
+
+        value = str(value)
 
         formats = [
             "%Y-%m-%d %H:%M:%S",
             "%Y-%m-%dT%H:%M:%S",
             "%Y-%m-%dT%H:%M:%S.%fZ",
+            "%Y-%m-%d",
         ]
 
         for fmt in formats:
             try:
                 dt = datetime.strptime(value, fmt)
                 return timezone.make_aware(dt, timezone.get_current_timezone())
-            except Exception:
+            except ValueError:
                 pass
 
         return timezone.now()
