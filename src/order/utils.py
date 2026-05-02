@@ -283,7 +283,7 @@ def send_order_confirmation_email(order, email, link=None):
     logo_url = "https://img.freepik.com/premium-vector/hand-drawn-cosmetic-brushes-gentle-brush-stroke-grunge-style-sketch-cosmetic-illustration_484720-4254.jpg?w=2000"
 
     # Format ngày đẹp: dd/mm/yyyy HH:MM
-    order_date = timezone.localtime(order.order_date).strftime("%d/%m/%Y %H:%M")
+    order_date = timezone.localtime(timezone.now()).strftime("%H:%M %d/%m/%Y")
 
     subject = f"Xác nhận đơn hàng {order.code} tại Lades"
     message = f"Đơn hàng {order.code} của bạn đã được đặt thành công. Xem chi tiết: {link or ''}"
