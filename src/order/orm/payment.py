@@ -130,6 +130,7 @@ class PaymentORM:
         raw_payload: dict,
     ):
         with transaction.atomic():
+            send_order_confirmation_email(order=order, email=order.user.email)
             PaymentORM.mark_payment_paid(
                 payment=payment,
                 sepay_transaction_id=sepay_transaction_id,
@@ -138,7 +139,7 @@ class PaymentORM:
                 raw_payload=raw_payload,
             )
             PaymentORM.mark_order_confirmed(order=order)
-        send_order_confirmation_email(order=order, email=order.user.email)
+        
         return payment, order
 
     @staticmethod
