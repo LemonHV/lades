@@ -1,5 +1,4 @@
 import os
-import secrets
 from uuid import UUID
 
 from account.exceptions import BackendURLNotConfigured
@@ -13,7 +12,7 @@ from product.exceptions import (
 from product.orm.product import ProductORM
 from product.orm.verify_code import VerifyCodeORM
 from product.schemas import VerifierLocationRequestSchema
-from product.utils import generate_qr_image, get_ip_location
+from product.utils import generate_qr_image, get_ip_location, generate_random_code
 
 
 class VerifyCodeService:
@@ -27,7 +26,7 @@ class VerifyCodeService:
         if not product:
             raise ProductDoesNotExists
 
-        code = secrets.token_urlsafe(32)
+        code = generate_random_code()
 
         backend_url = os.environ.get("BACKEND_URL")
         if not backend_url:
