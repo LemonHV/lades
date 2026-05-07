@@ -136,7 +136,7 @@ def generate_qrcode_pdf(verify_codes):
     gap_y = 10 * mm
     padding = 10 * mm
 
-    font_size = 8
+    font_size = 6
     text_height = 5 * mm
 
     usable_width = width - 2 * padding
