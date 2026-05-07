@@ -133,16 +133,16 @@ def generate_qrcode_pdf(verify_codes):
     width, height = A4
 
     # Layout
-    cols = 5
+    cols = 4
 
     padding = 12 * mm
 
-    gap_x = 12 * mm
-    gap_y = 14 * mm
+    gap_x = 18 * mm
+    gap_y = 18 * mm
 
     # Text
-    font_size = 8
-    text_height = 4 * mm
+    font_size = 10
+    text_height = 6 * mm
 
     usable_width = width - (2 * padding)
 
@@ -172,7 +172,9 @@ def generate_qrcode_pdf(verify_codes):
             if r.status_code != 200:
                 continue
 
-            if not r.headers.get("Content-Type", "").startswith("image/"):
+            if not r.headers.get(
+                "Content-Type", ""
+            ).startswith("image/"):
                 continue
 
             image = ImageReader(BytesIO(r.content))
@@ -191,7 +193,7 @@ def generate_qrcode_pdf(verify_codes):
             # Draw code below QR
             code = getattr(vc, "code", "")
 
-            text_y = y - 3 * mm
+            text_y = y - 4 * mm
 
             c.drawCentredString(
                 x + (qr_size / 2),
@@ -231,7 +233,9 @@ def generate_qrcode_pdf(verify_codes):
         content_type="application/pdf",
     )
 
-    response["Content-Disposition"] = 'attachment; filename="qr_codes.pdf"'
+    response[
+        "Content-Disposition"
+    ] = 'attachment; filename="qr_codes.pdf"'
 
     return response
 
