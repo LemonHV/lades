@@ -129,23 +129,28 @@ def generate_qrcode_pdf(verify_codes):
     buffer = BytesIO()
 
     c = canvas.Canvas(buffer, pagesize=A4)
+
     width, height = A4
 
-    cols = 6
-    gap_x = 5 * mm
-    gap_y = 10 * mm
-    padding = 10 * mm
+    # Layout
+    cols = 5
 
-    font_size = 6
-    text_height = 5 * mm
+    padding = 12 * mm
 
-    usable_width = width - 2 * padding
+    gap_x = 12 * mm
+    gap_y = 14 * mm
 
-    qr_size = (usable_width - (cols - 1) * gap_x) / cols
+    # Text
+    font_size = 8
+    text_height = 4 * mm
+
+    usable_width = width - (2 * padding)
+
+    qr_size = (usable_width - ((cols - 1) * gap_x)) / cols
 
     block_height = qr_size + text_height + gap_y
 
-    rows = math.floor((height - 2 * padding) / block_height)
+    rows = math.floor((height - (2 * padding)) / block_height)
 
     x_start = padding
     y_start = height - padding - qr_size
@@ -174,21 +179,32 @@ def generate_qrcode_pdf(verify_codes):
 
             # Draw QR
             c.drawImage(
-                image, x, y, qr_size, qr_size, preserveAspectRatio=True, mask="auto"
+                image,
+                x,
+                y,
+                qr_size,
+                qr_size,
+                preserveAspectRatio=True,
+                mask="auto",
             )
 
             # Draw code below QR
             code = getattr(vc, "code", "")
 
-            text_y = y - 4 * mm
+            text_y = y - 3 * mm
 
-            c.drawCentredString(x + qr_size / 2, text_y, code)
+            c.drawCentredString(
+                x + (qr_size / 2),
+                text_y,
+                code,
+            )
 
             count += 1
 
             # Next column
             if count % cols != 0:
                 x += qr_size + gap_x
+
             else:
                 # Next row
                 x = x_start
@@ -197,6 +213,7 @@ def generate_qrcode_pdf(verify_codes):
             # New page
             if count % (cols * rows) == 0:
                 c.showPage()
+
                 c.setFont("Helvetica-Bold", font_size)
 
                 x = x_start
@@ -209,7 +226,10 @@ def generate_qrcode_pdf(verify_codes):
 
     buffer.seek(0)
 
-    response = HttpResponse(buffer, content_type="application/pdf")
+    response = HttpResponse(
+        buffer,
+        content_type="application/pdf",
+    )
 
     response["Content-Disposition"] = 'attachment; filename="qr_codes.pdf"'
 
