@@ -1,3 +1,4 @@
+import re
 from uuid import UUID
 from datetime import datetime, date, time
 from django.utils import timezone
@@ -126,8 +127,8 @@ class PaymentService:
                 "success": True,
                 "message": "Transaction already processed",
             }
-
-        order_code = str(payload.content or "").strip().upper()[-20:]
+        match = re.search(r"DH102969([A-Z0-9]{20})", payload.content)
+        order_code = match.group(1)
         if not order_code:
             return {
                 "success": True,
