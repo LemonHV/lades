@@ -1,3 +1,4 @@
+import re
 from uuid import UUID
 from datetime import datetime, date, time
 from django.utils import timezone
@@ -73,6 +74,9 @@ class PaymentService:
 
     @staticmethod
     def _parse_transaction_datetime(value):
+        """
+        Chuẩn hóa transactionDate từ webhook sang timezone-aware datetime
+        """
         if not value:
             return timezone.now()
 
@@ -85,7 +89,7 @@ class PaymentService:
             dt = datetime.combine(value, time.min)
             return timezone.make_aware(dt, timezone.get_current_timezone())
 
-        value = str(value)
+        value = str(value).strip()
 
         formats = [
             "%Y-%m-%d %H:%M:%S",
@@ -99,69 +103,110 @@ class PaymentService:
                 dt = datetime.strptime(value, fmt)
                 return timezone.make_aware(dt, timezone.get_current_timezone())
             except ValueError:
-                pass
+                continue
 
         return timezone.now()
 
     @staticmethod
     def _payload_to_dict(payload):
+        """
+        Convert webhook payload về dict để lưu raw data
+        """
         if hasattr(payload, "model_dump"):
             return payload.model_dump()
+
         if hasattr(payload, "dict"):
             return payload.dict()
+
         return dict(payload)
+
+    @staticmethod
+    def _extract_order_code(content):
+        """
+        Format SePay:
+        DH1029694AKLYJ2WAI36QUA76BAD
+
+        Trong đó:
+        DH102969 = prefix thanh toán
+        4AKLYJ2WAI36QUA76BAD = mã đơn hàng
+        """
+        content = str(content or "").strip().upper()
+
+        match = re.match(r"^DH\d{6}([A-Z0-9]+)$", content)
+
+        if not match:
+            return None
+
+        return match.group(1)
 
     def handle_sepay_webhook(self, payload: SePayWebhookSchema):
         raw_payload = self._payload_to_dict(payload)
 
+        # Chỉ xử lý tiền vào
         if str(payload.transferType).lower() != "in":
             return {
                 "success": True,
                 "message": "Ignore outgoing transaction",
             }
 
+        # Chống webhook trùng
         existed_payment = self.orm.get_payment_by_sepay_transaction_id(payload.id)
+
         if existed_payment:
             return {
                 "success": True,
                 "message": "Transaction already processed",
             }
 
-        order_code = str(payload.content or "").strip().upper()[8:].strip()
+        # Parse mã đơn
+        order_code = self._extract_order_code(payload.content)
+
         if not order_code:
             return {
                 "success": True,
-                "message": "Cannot extract order code",
+                "message": f"Cannot extract order code from content: {payload.content}",
             }
 
+        # Tìm đơn hàng
         order = self.orm.get_order_by_code(order_code)
+
         if not order:
             return {
                 "success": True,
                 "message": f"Order {order_code} not found",
             }
 
+        # Tìm payment
         payment = self.orm.get_payment_by_order(order)
+
         if not payment:
             return {
                 "success": True,
                 "message": f"Payment for order {order_code} not found",
             }
 
+        # Đã thanh toán trước đó
         if payment.status == PaymentStatus.PAID:
             return {
                 "success": True,
                 "message": "Payment already paid",
             }
 
+        # Check số tiền
         if int(payment.amount) != int(payload.transferAmount):
             return {
                 "success": False,
-                "message": f"Amount mismatch: db={payment.amount}, webhook={payload.transferAmount}",
+                "message": (
+                    f"Amount mismatch: "
+                    f"db={payment.amount}, "
+                    f"webhook={payload.transferAmount}"
+                ),
             }
 
+        # Parse ngày thanh toán
         paid_at = self._parse_transaction_datetime(payload.transactionDate)
 
+        # Update DB
         self.orm.mark_payment_and_order_paid(
             payment=payment,
             order=order,
