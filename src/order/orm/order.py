@@ -130,9 +130,8 @@ class OrderORM:
                     price=product.sale_price,
                     quantity=item.quantity,
                 )
-                if payload.payment_method == "cod":
-                    product.quantity_in_stock -= item.quantity
-                    product.save(update_fields=["quantity_in_stock"])
+                product.quantity_in_stock -= item.quantity
+                product.save(update_fields=["quantity_in_stock"])
         else:
             for cart_item in cart_items:
                 product = products[cart_item.product.uid]
@@ -143,9 +142,8 @@ class OrderORM:
                     price=product.sale_price,
                     quantity=cart_item.quantity,
                 )
-                if payload.payment_method == "cod":
-                    product.quantity_in_stock -= cart_item.quantity
-                    product.save(update_fields=["quantity_in_stock"])
+                product.quantity_in_stock -= cart_item.quantity
+                product.save(update_fields=["quantity_in_stock"])
 
             CartItem.objects.filter(uid__in=[item.uid for item in cart_items]).delete()
 

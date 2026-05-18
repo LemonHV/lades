@@ -6,10 +6,8 @@ from order.exceptions import PaymentDoesNotExists
 from order.models import Order, Payment, OrderItem
 from product.models import ProductImage
 from django.db.models import Prefetch
-from product.models import Product
-from product.exceptions import ProductDoesNotExists, ProductOutOfStock
 from order.exceptions import OrderDoesNotExists
-from order.utils import OrderStatus, PaymentStatus
+from order.utils import PaymentStatus
 from order.utils import send_order_confirmation_email
 
 
@@ -80,47 +78,6 @@ class PaymentORM:
         return payment
 
     @staticmethod
-    @transaction.atomic
-    def mark_order_confirmed(order: Order):
-        order = (
-            Order.objects.select_for_update()
-            .prefetch_related("items__product")
-            .get(uid=order.uid)
-        )
-
-        if order.status != OrderStatus.PENDING:
-            return order
-
-        items = list(order.items.all())
-        product_uids = [item.product.uid for item in items]
-
-        products = Product.objects.select_for_update().in_bulk(
-            product_uids,
-            field_name="uid",
-        )
-
-        for item in items:
-            product = products.get(item.product.uid)
-            if not product:
-                raise ProductDoesNotExists
-
-            if item.quantity <= 0:
-                raise ProductOutOfStock
-
-            if item.quantity > product.quantity_in_stock:
-                raise ProductOutOfStock
-
-        for item in items:
-            product = products[item.product.uid]
-            product.quantity_in_stock -= item.quantity
-            product.save(update_fields=["quantity_in_stock"])
-
-        order.status = OrderStatus.PROCESSING
-        order.save(update_fields=["status"])
-
-        return order
-
-    @staticmethod
     def mark_payment_and_order_paid(
         payment: Payment,
         order: Order,
@@ -137,7 +94,6 @@ class PaymentORM:
                 paid_at=paid_at,
                 raw_payload=raw_payload,
             )
-            PaymentORM.mark_order_confirmed(order=order)
         send_order_confirmation_email(order=order, email=order.user.email)
         return payment, order
 
