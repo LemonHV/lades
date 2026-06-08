@@ -11,10 +11,20 @@ from product.exceptions import (
     ProductFileRequired,
     ProductImageDoesNotExists,
 )
+from django.core.cache import cache
+
+from product.caching import (
+    PRODUCT_LIST_CACHE_KEY,
+    PRODUCT_LIST_CACHE_TTL,
+    is_only_get_list,
+    clear_product_cache,
+)
 from product.models import Brand, Product, ProductImage
 from product.orm.product import ProductORM
 from product.schemas import ProductRequestSchema, SearchFilterSortSchema
 from product.utils import build_product_workbook, load_product_information
+from django.core.cache import cache
+
 
 
 class ProductService:
@@ -49,7 +59,7 @@ class ProductService:
             )
 
             product_image_uids.append(product_image.uid)
-
+        clear_product_cache()
         return product
 
     def get_product_file(self):
@@ -137,7 +147,7 @@ class ProductService:
             _ = self.orm.create_product_image(
                 product=product, attachment=attachment, is_main=True, sort_order=0
             )
-
+        clear_product_cache()
         return list(all_products)
 
     def delete_product_image(self, uid: UUID):
@@ -152,7 +162,22 @@ class ProductService:
             self.attachment_service.delete_attachment(attachment_uid)
 
     def get_products(self, payload: SearchFilterSortSchema):
-        return self.orm.get_products(payload=payload)
+        if is_only_get_list(payload):
+            cached_products = cache.get(PRODUCT_LIST_CACHE_KEY)
+            if cached_products is not None:
+                return cached_products
+
+        products = self.orm.get_products(payload=payload)
+
+        if is_only_get_list(payload):
+            products = list(products)
+            cache.set(
+                PRODUCT_LIST_CACHE_KEY,
+                products,
+                timeout=PRODUCT_LIST_CACHE_TTL,
+            )
+
+        return products
 
     def get_product_by_uid(self, uid: UUID):
         product = self.orm.get_product_by_uid(uid=uid)
@@ -165,18 +190,21 @@ class ProductService:
         if not product:
             raise ProductDoesNotExists
         product_info = payload.dict()
+        clear_product_cache()
         return self.orm.update_product(product=product, **product_info)
 
     def on_off_product(self, uid: UUID):
         product = self.orm.get_product_by_uid(uid=uid)
         if not product:
             raise ProductDoesNotExists
+        clear_product_cache()
         return self.orm.on_off_product(product=product)
 
     def delete_product(self, uid: UUID):
         product = self.orm.get_product_by_uid(uid=uid)
         if not product:
             raise ProductDoesNotExists
+        clear_product_cache()
         return self.orm.hard_delete_product(product=product)
 
     def create_brand(self, name: str):
