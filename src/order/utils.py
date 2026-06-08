@@ -338,7 +338,7 @@ def send_order_confirmation_email(order, email, link=None):
     payment_method = getattr(order, "payment_method", "")
     payment_method = payment_method.lower() if payment_method else ""
 
-    if payment_method == "bank":
+    if payment_method == "banking":
         payment_notice_html = f"""
             <div style="margin:22px 0 12px 0; text-align:center;">
                 <div style="
