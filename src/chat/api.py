@@ -124,19 +124,16 @@ class NotificationAPI(Controller):
     def __init__(self, service: NotificationService):
         self.service = service
 
-    # Lấy danh sách notification
     @get("/", response=list[NotificationSchema])
     def get_notifications(self, request: AuthenticatedRequest):
         return self.service.get_notifications(request.user)
 
-    # Đánh dấu đã đọc
     @post("/{notification_uid}/read")
     def mark_as_read(self, request: AuthenticatedRequest, notification_uid: str):
         updated = self.service.mark_as_read(notification_uid, request.user)
 
         return {"detail": "Marked as read", "updated": updated}
 
-    # Đánh dấu đọc tất cả
     @post("/read-all")
     def mark_all_as_read(self, request: AuthenticatedRequest):
         updated = self.service.mark_all_as_read(request.user)

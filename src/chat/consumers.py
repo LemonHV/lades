@@ -41,7 +41,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         self.user_uid = self.scope["url_route"]["kwargs"]["user_uid"]
 
-        # user thường chỉ được vào room của chính họ
         if not self.user.is_staff and str(self.user.uid) != self.user_uid:
             await self.close(code=4003)
             return
@@ -52,7 +51,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
-        # khi vừa connect có thể đánh dấu các tin nhắn bên kia gửi là đã đọc
         await self._mark_messages_as_read()
 
         await self.send(

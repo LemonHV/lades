@@ -21,7 +21,6 @@ types-requests
 
 openpyxl
 
-# cloudinary
 cloudinary
 django-cloudinary-storage
 

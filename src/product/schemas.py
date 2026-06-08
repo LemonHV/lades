@@ -17,18 +17,12 @@ from product.models import (
 )
 
 
-### FILTER SCHEMA ###
-
-
 class SearchFilterSortSchema(Schema):
     search: Optional[str] = Query(None)
     brand: Optional[str] = Query(None)
     min_price: Optional[int] = Query(None)
     max_price: Optional[int] = Query(None)
     sort: str = Query("asc")
-
-
-### REQUEST SCHEMA ###
 
 
 class BrandRequestSchema(Schema):
@@ -51,8 +45,6 @@ class ProductUpdateSchema(Schema):
     description: Optional[str] = None
     quantity_in_stock: Optional[int] = None
 
-
-### RESPONSE SCHEMA ###
 
 
 class BrandResponseSchema(ModelSchema):

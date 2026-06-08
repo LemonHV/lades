@@ -282,36 +282,115 @@ def generate_order_bill(order, order_items):
 def send_order_confirmation_email(order, email, link=None):
     logo_url = "https://img.freepik.com/premium-vector/hand-drawn-cosmetic-brushes-gentle-brush-stroke-grunge-style-sketch-cosmetic-illustration_484720-4254.jpg?w=2000"
 
-    # Format ngày đẹp: dd/mm/yyyy HH:MM
     order_date = timezone.localtime(timezone.now()).strftime("%H:%M %d/%m/%Y")
 
     subject = f"Xác nhận đơn hàng {order.code} tại Lades"
     message = f"Đơn hàng {order.code} của bạn đã được đặt thành công. Xem chi tiết: {link or ''}"
 
-    # Build danh sách sản phẩm thành HTML table đẹp
+    shipping_fee = getattr(order, "shipping_fee", 0) or 0
+    total_amount = getattr(order, "total_amount", 0) or 0
+
+    formatted_shipping_fee = f"{shipping_fee:,} VNĐ"
+    formatted_total = f"{total_amount:,} VNĐ"
+
     items_html = ""
-    for item in getattr(order, "order_items", order.items.all()):
+
+    order_items = getattr(order, "order_items", None)
+    if order_items is None:
+        order_items = order.items.all()
+
+    for item in order_items:
+        item_total_price = getattr(item, "total_price", 0) or 0
+
         items_html += f"""
             <tr>
-                <td style="padding:6px 8px; border:1px solid #ddd; font-size:14px; max-width:250px; word-break:break-word;">{item.product.name}</td>
-                <td style="padding:6px 8px; border:1px solid #ddd; text-align:center; font-size:14px;">{item.quantity}</td>
-                <td style="padding:6px 8px; border:1px solid #ddd; text-align:right; font-size:14px; white-space:nowrap;">{item.total_price:,} VNĐ</td>
+                <td style="padding:6px 8px; border:1px solid #ddd; font-size:14px; max-width:250px; word-break:break-word;">
+                    {item.product.name}
+                </td>
+                <td style="padding:6px 8px; border:1px solid #ddd; text-align:center; font-size:14px;">
+                    {item.quantity}
+                </td>
+                <td style="padding:6px 8px; border:1px solid #ddd; text-align:right; font-size:14px; white-space:nowrap;">
+                    {item_total_price:,} VNĐ
+                </td>
             </tr>
         """
 
-    # Thêm phí vận chuyển và tổng tiền vào cuối bảng
-    shipping_fee = getattr(order, "shipping_fee", 0)
-    total_amount = getattr(order, "total_amount", 0)
     items_html += f"""
         <tr>
-            <td colspan="2" style="padding:6px 8px; border:1px solid #ddd; text-align:right; font-weight:bold;">Phí vận chuyển</td>
-            <td style="padding:6px 8px; border:1px solid #ddd; text-align:right; font-weight:bold;">{shipping_fee:,} VNĐ</td>
+            <td colspan="2" style="padding:6px 8px; border:1px solid #ddd; text-align:right; font-weight:bold;">
+                Phí vận chuyển
+            </td>
+            <td style="padding:6px 8px; border:1px solid #ddd; text-align:right; font-weight:bold;">
+                {formatted_shipping_fee}
+            </td>
         </tr>
         <tr>
-            <td colspan="2" style="padding:6px 8px; border:1px solid #ddd; text-align:right; font-weight:bold;">Tổng cộng</td>
-            <td style="padding:6px 8px; border:1px solid #ddd; text-align:right; font-weight:bold;">{total_amount:,} VNĐ</td>
+            <td colspan="2" style="padding:6px 8px; border:1px solid #ddd; text-align:right; font-weight:bold;">
+                Tổng cộng
+            </td>
+            <td style="padding:6px 8px; border:1px solid #ddd; text-align:right; font-weight:bold;">
+                {formatted_total}
+            </td>
         </tr>
     """
+
+    payment_method = getattr(order, "payment_method", "")
+    payment_method = payment_method.lower() if payment_method else ""
+
+    if payment_method == "bank":
+        payment_notice_html = f"""
+            <div style="margin:22px 0 12px 0; text-align:center;">
+                <div style="
+                    display:inline-block;
+                    padding:8px 24px;
+                    border:3px solid #ff3333;
+                    color:#ff3333;
+                    font-size:18px;
+                    font-weight:bold;
+                    text-transform:uppercase;
+                    transform:rotate(-10deg);
+                    -webkit-transform:rotate(-10deg);
+                    border-radius:4px;
+                    letter-spacing:1px;
+                ">
+                    Đã thanh toán
+                </div>
+            </div>
+
+            <p style="
+                margin-top:14px;
+                padding:12px;
+                background-color:#f0fff4;
+                border:1px solid #9ae6b4;
+                color:#006241;
+                font-size:14px;
+                border-radius:4px;
+                line-height:1.6;
+                font-weight:bold;
+            ">
+                Đơn hàng đã được thanh toán qua chuyển khoản ngân hàng.
+            </p>
+        """
+    elif payment_method == "cod":
+        payment_notice_html = f"""
+            <p style="
+                margin-top:16px;
+                padding:12px;
+                background-color:#fff7e6;
+                border:1px solid #ffd591;
+                color:#8a5a00;
+                font-size:14px;
+                border-radius:4px;
+                line-height:1.6;
+            ">
+                Bạn cần chuẩn bị số tiền 
+                <strong>{formatted_total}</strong> 
+                để thanh toán đơn hàng khi nhận hàng.
+            </p>
+        """
+    else:
+        payment_notice_html = ""
 
     html_message = f"""
     <!DOCTYPE html>
@@ -326,38 +405,54 @@ def send_order_confirmation_email(order, email, link=None):
                         <img src="{logo_url}" alt="Lades" width="120" style="display:block;">
                     </td>
                 </tr>
+
                 <tr>
                     <td style="color:#333333; font-size:16px; padding-bottom:20px;">
                         Xin chào <strong>{order.name}</strong>,
                     </td>
                 </tr>
+
                 <tr>
                     <td style="color:#333333; font-size:14px; line-height:1.6;">
                         Đơn hàng của bạn đã được đặt thành công!<br><br>
+
                         <strong>Mã đơn hàng:</strong> {order.code}<br>
                         <strong>Ngày đặt:</strong> {order_date}<br>
-                        <strong>Tổng thanh toán:</strong> {order.total_amount} VNĐ<br><br>
+                        <strong>Tổng thanh toán:</strong> {formatted_total}<br><br>
 
                         <strong>Danh sách sản phẩm:</strong>
+
                         <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; margin-top:10px;">
                             <thead style="background-color:#006241; color:#ffffff;">
                                 <tr>
-                                    <th style="padding:8px; border:1px solid #ddd; text-align:left;">Sản phẩm</th>
-                                    <th style="padding:8px; border:1px solid #ddd; text-align:center;">Số lượng</th>
-                                    <th style="padding:8px; border:1px solid #ddd; text-align:right;">Thành tiền</th>
+                                    <th style="padding:8px; border:1px solid #ddd; text-align:left;">
+                                        Sản phẩm
+                                    </th>
+                                    <th style="padding:8px; border:1px solid #ddd; text-align:center;">
+                                        Số lượng
+                                    </th>
+                                    <th style="padding:8px; border:1px solid #ddd; text-align:right;">
+                                        Thành tiền
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {items_html}
                             </tbody>
-                        </table><br>
+                        </table>
 
-                        {f'<a href="{link}" style="display:inline-block;padding:12px 24px;background-color:#006241;color:#ffffff;text-decoration:none;border-radius:4px;">Xem chi tiết đơn hàng</a>' if link else ""}
+                        {payment_notice_html}
+
+                        {f'<a href="{link}" style="display:inline-block; margin-top:12px; padding:12px 24px; background-color:#006241; color:#ffffff; text-decoration:none; border-radius:4px;">Xem chi tiết đơn hàng</a>' if link else ""}
                     </td>
                 </tr>
+
                 <tr>
-                    <td style="padding:30px 0;"><hr style="border:none; border-top:1px solid #dddddd;"></td>
+                    <td style="padding:30px 0;">
+                        <hr style="border:none; border-top:1px solid #dddddd;">
+                    </td>
                 </tr>
+
                 <tr>
                     <td style="padding-top:20px; font-size:12px; color:#999999; line-height:1.5;">
                         Email này được gửi tự động, vui lòng không phản hồi.<br>
@@ -380,7 +475,6 @@ def send_order_confirmation_email(order, email, link=None):
         html_message=html_message,
         fail_silently=False,
     )
-
 
 FIELD_ORDER = [
     "merchant",
