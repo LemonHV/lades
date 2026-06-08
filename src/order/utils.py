@@ -84,6 +84,21 @@ def generate_order_bill(order, order_items):
     usable_width = width - 2 * padding
 
     # ========================
+    # PAYMENT AMOUNT DISPLAY
+    # ========================
+    payment_method = getattr(order, "payment_method", "")
+    payment_method = str(payment_method).lower() if payment_method else ""
+
+    total_amount = getattr(order, "total_amount", 0) or 0
+
+    if payment_method == "banking":
+        collect_amount = 0
+    else:
+        collect_amount = total_amount
+
+    collect_amount_text = f"{collect_amount:,} VND"
+
+    # ========================
     # PAGE BORDER
     # ========================
     c.rect(0.5 * mm, 0.5 * mm, width - 1 * mm, height - 1 * mm)
@@ -239,7 +254,7 @@ def generate_order_bill(order, order_items):
     c.setFont("Roboto-Bold", 9)
     c.drawCentredString(right_center_x, sign_title_y, "Chữ ký người nhận")
 
-    # --- Signature note (auto wrap)
+    # --- Signature note
     note_y = sign_title_y - 10
     c.setFont("Roboto", 7)
 
@@ -259,9 +274,14 @@ def generate_order_bill(order, order_items):
         sign_line_y,
     )
 
-    # --- COD amount
+    # --- Amount to collect
     c.setFont("Roboto-Bold", 18)
-    c.drawString(padding, note_y, f"{order.total_amount:,} VND")
+    c.drawString(padding, note_y, collect_amount_text)
+
+    # --- Payment note for bank order
+    if payment_method == "banking":
+        c.setFont("Roboto-Bold", 8)
+        c.drawString(padding, note_y - 12, "Đơn hàng đã thanh toán")
 
     # --- Delivery instruction
     c.setFont("Roboto-Bold", 9)
