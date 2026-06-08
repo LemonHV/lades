@@ -32,6 +32,9 @@ django-ninja-extra
 qrcode[pil]
 pillow
 
+django-redis==7.0.0
+redis==8.0.0
+
 reportlab
 requests
 
