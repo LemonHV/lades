@@ -105,11 +105,16 @@ TEMPLATES = [
     },
 ]
 
+REDIS_CHANNEL_URL = os.getenv("REDIS_CHANNEL_URL", "redis://127.0.0.1:6379/2")
+
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
+            "hosts": [REDIS_CHANNEL_URL],
+            "capacity": 1500,
+            "expiry": 60,
+            "group_expiry": 3600,
         },
     },
 }
@@ -144,6 +149,11 @@ CACHES = {
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             "IGNORE_EXCEPTIONS": True,
+            "SOCKET_CONNECT_TIMEOUT": 5,
+            "SOCKET_TIMEOUT": 5,
+            "CONNECTION_POOL_KWARGS": {
+                "max_connections": 100,
+            },
         },
         "KEY_PREFIX": "lades",
         "TIMEOUT": 300,
